@@ -1,13 +1,16 @@
-import {ShoreSimulation} from '../src/simulation.js';
+import {ShoreSimulation} from './reference/simulation.js';
 import {CudaSolver} from '../src/cuda-solver.js';
 import {GRID} from '../src/coast.js';
-import {makeNoiseTexture} from '../src/noise.js';
+import {makeNoiseTexture} from './reference/noise.js';
+import {checkRealism} from './realism.js';
 const fields=['h','u','v','foam','old','wet','film','qx','qz'];
 const report={passed:true,cases:[]};
 async function run(name,config,steps,setup,tolerance,closed=false){
  const cpu=new ShoreSimulation(config),gpuSim=new ShoreSimulation(config);
  if(setup){await setup(cpu);await setup(gpuSim);}
- const gpu=await CudaSolver.create(gpuSim);
+ // Keep exact upstream parity as an explicit reference mode; enhanced physics
+ // is covered by separate conservation, equilibrium and turbulence tests.
+ const gpu=await CudaSolver.create(gpuSim,{enhanced:false});
  const initialVolume=gpuSim.metrics().volume;
  try{
   report.adapter=gpu.runtime.describe();
@@ -35,6 +38,7 @@ async function run(name,config,steps,setup,tolerance,closed=false){
  }finally{gpu.dispose();}
 }
 try{
+ await checkRealism(report);
  const initCpu=new ShoreSimulation(GRID),initGpu=new ShoreSimulation(GRID,{initialize:false}),initSolver=await CudaSolver.create(initGpu);
  try{
   initSolver.initialize();const data=await initSolver.runtime.read(initSolver.S),names=['bed','sand','h','u','v','foam','old','wet','film','qx','qz'],delta={};

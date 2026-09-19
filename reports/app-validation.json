@@ -21,40 +21,40 @@
       "lighting": "afternoon",
       "clouds": 0.25
     },
-    "renderTime": 39.00316666666575,
-    "alpha": 0.09499999997757953,
-    "sprayEmitted": 26,
-    "rockWetReach": 0.21600057184696198,
+    "renderTime": 39.00399999999946,
+    "alpha": 0.11999999998885585,
+    "sprayEmitted": 20,
+    "rockWetReach": 0.22373372316360474,
     "simulationLag": 0,
     "worker": {
       "kernel": "CUDA WebShader / WebGPU",
       "resident": true,
-      "submissionMeanMs": 0.06774941986975565,
+      "submissionMeanMs": 0.09382022476723689,
       "readbackMs": 0,
       "packMs": 0,
       "reconstructionMs": 0,
-      "debtMs": 3.166666665921778,
+      "debtMs": 3.999999999627312,
       "steps": 2342,
       "stats": {
-        "pipelineCompiles": 19,
+        "pipelineCompiles": 21,
         "pipelineCacheHits": 0,
-        "bindGroupsCreated": 20,
-        "submissions": 442,
-        "dispatches": 2177,
-        "uniformBytesUploaded": 451744,
-        "dataBytesUploaded": 7754080,
-        "readbackBytes": 160
+        "bindGroupsCreated": 22,
+        "submissions": 188,
+        "dispatches": 2196,
+        "uniformBytesUploaded": 517568,
+        "dataBytesUploaded": 7754208,
+        "readbackBytes": 128
       }
     },
     "metrics": {
-      "maxH": 4.549374103546143,
-      "volume": 14292.5986328125,
-      "foam": 17709.88671875,
-      "wetCells": 80639,
+      "maxH": 4.4726409912109375,
+      "volume": 14332.134765625,
+      "foam": 20289.712890625,
+      "wetCells": 80512,
       "nonfinite": 0,
-      "sprayEmitted": 26,
-      "rockWetReach": 0.21600057184696198,
-      "time": 39.016666412353516
+      "sprayEmitted": 20,
+      "rockWetReach": 0.22373372316360474,
+      "time": 38.03333282470703
     },
     "errors": []
   },
@@ -70,82 +70,89 @@
     "revision": "185",
     "backend": "WebGPU",
     "solver": "CUDA WebShader / WebGPU",
-    "time": 39.69999999999979,
+    "time": 39.73333333333312,
     "paused": false,
     "quality": "balanced",
     "view": "ocean",
     "position": [
       18,
-      3.3174429547144353,
+      3.3,
       -32.5
     ],
     "conditions": {
-      "strength": 1.117332848162554,
-      "wind": 2.815988355901306,
-      "tide": 0.03519985444876632,
+      "strength": 1.1241424472666732,
+      "wind": 2.9794187344001672,
+      "tide": 0.03724273418000209,
       "lighting": "afternoon",
       "clouds": 0.25
     },
-    "renderTime": 39.667366666665714,
-    "alpha": 0.020999999977676737,
+    "renderTime": 39.71659999999905,
+    "alpha": 0.49799999997776456,
     "sprayEmitted": 29,
-    "rockWetReach": 0.21280063688755035,
+    "rockWetReach": 0.21253398060798645,
     "simulationLag": 0,
     "worker": {
       "kernel": "CUDA WebShader / WebGPU",
       "resident": true,
-      "submissionMeanMs": 0.06571428566106728,
+      "submissionMeanMs": 0.095927601857153,
       "readbackMs": 0,
       "packMs": 0,
       "reconstructionMs": 0,
-      "debtMs": 0.6999999992548904,
-      "steps": 2382,
+      "debtMs": 16.59999999925479,
+      "steps": 2384,
       "stats": {
-        "pipelineCompiles": 19,
+        "pipelineCompiles": 21,
         "pipelineCacheHits": 0,
-        "bindGroupsCreated": 20,
-        "submissions": 537,
-        "dispatches": 2653,
-        "uniformBytesUploaded": 550800,
-        "dataBytesUploaded": 7754080,
+        "bindGroupsCreated": 22,
+        "submissions": 233,
+        "dispatches": 2705,
+        "uniformBytesUploaded": 637072,
+        "dataBytesUploaded": 7754208,
         "readbackBytes": 4927680
       }
     },
     "metrics": {
-      "maxH": 4.563903331756592,
-      "volume": 14289.2958984375,
-      "foam": 17825,
-      "wetCells": 80643,
+      "maxH": 4.563643932342529,
+      "volume": 14290.4931640625,
+      "foam": 23158.021484375,
+      "wetCells": 80582,
       "nonfinite": 0,
       "sprayEmitted": 29,
-      "rockWetReach": 0.21280063688755035,
-      "time": 39.400001525878906
+      "rockWetReach": 0.21253398060798645,
+      "time": 39.43333435058594
     },
     "errors": []
   },
   "errors": [],
-  "cpuFallback": {
+  "obsoleteFallbackQuery": {
     "ready": true,
-    "solver": "WebAssembly",
-    "backend": "WebGL2"
+    "solver": "CUDA WebShader / WebGPU",
+    "backend": "WebGPU",
+    "workers": "undefined"
   },
+  "noCpuModulesLoaded": true,
   "cudaFailure": {
     "message": "CUDA source: HTTP 503",
-    "fallback": "?solver=cpu&webgl=1"
+    "fallback": false
   },
   "coldStart": {
     "ready": true,
     "time": 35.99999999999924,
     "metrics": {
-      "maxH": 4.43477201461792,
-      "volume": 14348.9296875,
-      "foam": 18183.494140625,
-      "wetCells": 80326,
+      "maxH": 4.4340362548828125,
+      "volume": 14285.6923828125,
+      "foam": 32548.13671875,
+      "wetCells": 79278,
       "nonfinite": 0,
       "sprayEmitted": 0,
       "rockWetReach": 0.23999999463558197,
       "time": 36
     },
     "error": ""
+  },
+  "webgpuRequired": {
+    "message": "WebGPU is unavailable in this browser.",
+    "canvas": false,
+    "fallback": false
   }
 }

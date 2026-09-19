@@ -17,6 +17,9 @@ Original live demo: https://iamtechartist.github.io/coastal-simulation/
 The port by [SamG-Coder](https://github.com/SamG-Coder) adds CUDA WebShader compute,
 GPU-resident surface reconstruction and render fields, GPU spray, validation and
 benchmark tooling, direct free-flight controls, an FPS display, and Pages deployment.
+The enhanced GPU model adds momentum advection, transported breaking turbulence,
+directional short-wave detail and updated water highlights. CPU reference code is
+retained only in development tests and is excluded from the deployed application.
 Port additions are provided under the MIT license as well.
 
 ## CUDA WebShader

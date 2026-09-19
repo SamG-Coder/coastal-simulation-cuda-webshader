@@ -37,6 +37,22 @@ __global__ void reconstruct(const float *S,float *Eta,int nx,int nz){
  float dry=fminf(bed[k]-.0005f,found?level:bed[k]-.025f),t=h[k]/.0005f;
  Eta[k]=dry+(raw-dry)*t*t;
 }
+// Eight directional gravity-wave bands with deep-water dispersion. This is
+// render-scale detail, not extra water volume. Fade at dry land, domain seams,
+// and breaking foam; the solver's conservative depth is left untouched.
+__global__ void surfaceDetail(const float *S,const float *Aux,const float *DetailW,const float *Controls,float *Eta,int nx,int nz,float x0,float z0,float dx,float dz,float time){
+ int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
+ int i=k%nx,j=k/nx;float depth=S[2*n+k];if(depth<.025f)return;
+ float edge=smooth(0.0f,8.0f,(float)min(min(i,nx-1-i),min(j,nz-1-j)));
+ float fade=smooth(.025f,.65f,depth)*edge*(1.0f-.8f*cap(S[5*n+k]+Aux[2*n+k],0.0f,1.0f));
+ float x=x0+(float)i*dx,z=z0+(float)j*dz,angle=Controls[1]*.0174532925f,c=cosf(angle),s=sinf(angle),height=0;
+ for(int w=0;w<8;w++){
+  int a=w*4;float kx=DetailW[a]*c-DetailW[a+1]*s,kz=DetailW[a]*s+DetailW[a+1]*c;
+  float phase=x*kx+z*kz+time*DetailW[a+2]+(float)w*2.39996323f;
+  height+=DetailW[a+3]*(cosf(phase)+.18f*cosf(2.0f*phase));
+ }
+ Eta[k]+=height*fade*Controls[0];
+}
 // Padded row pitch allows three GPU buffer-to-texture copies, with no host data.
 __global__ void packFields(const float *S,const float *Eta,float4 *Out,int nx,int nz,int pitch,float dx,float dz){
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;

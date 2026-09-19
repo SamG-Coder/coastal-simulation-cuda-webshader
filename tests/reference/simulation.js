@@ -1,5 +1,5 @@
 import {packSurface} from './surface.js?v=1.3.0';
-import {GRID, bedHeight, terrainHeight, WAVES, clamp, smooth} from './coast.js?v=1.3.0';
+import {GRID, bedHeight, terrainHeight, WAVES, clamp, smooth} from '../../src/coast.js';
 
 // A conservative staggered-grid shallow-water solver. Pressure gradients drive
 // face velocities; donor-cell fluxes transport actual water volume. The outgoing

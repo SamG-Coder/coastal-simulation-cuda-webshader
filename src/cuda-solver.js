@@ -2,30 +2,40 @@ import {GpuRuntime} from '../vendor/cuda-webshader/runtime/runtime.js';
 import {ROCKS,WAVES} from './coast.js';
 
 export const FIELDS=['bed','sand','h','u','v','foam','old','wet','film','qx','qz','next','fluxX','fluxZ','limit','foamNext','oldNext','qxNext','qzNext'];
-export const ENTRIES=['faces','limits','limitFlux','integrate','boundary','transport','commitTransport','initializeWaves','initializeState','initializeContacts','updateControls','prepareRows','reconstruct','packFields','rockSpray','sprayVertices','metricsPartials','metricsFinish','generateNoise'];
+export const ENTRIES=['advectMomentum','faces','limits','limitFlux','integrate','boundary','transport','commitTransport','initializeWaves','initializeState','initializeContacts','updateControls','prepareRows','reconstruct','surfaceDetail','packFields','rockSpray','sprayVertices','metricsPartials','metricsFinish','generateNoise'];
 
 // One device/queue is shared with Three. No simulation readback in the render path.
 export class CudaSolver {
  static async create(sim,options={}){
+  const {enhanced=true,...runtimeOptions}=options;
   const sources=await Promise.all(['coastal-kernels.cu','coastal-render.cu'].map(async name=>{
    const response=await fetch(new URL(name,import.meta.url));
    if(!response.ok)throw new Error(`CUDA source: HTTP ${response.status}`);
    return response.text();
   }));
-  const runtime=await GpuRuntime.create({uniformCapacity:262144,...options});
+  const runtime=await GpuRuntime.create({uniformCapacity:262144,...runtimeOptions});
   try{
    const kernels={};
    for(const entry of ENTRIES)kernels[entry]=await runtime.kernel(sources.join('\n'),{entry,workgroupSize:[128,1,1]});
-   return new CudaSolver(sim,runtime,kernels);
+   return new CudaSolver(sim,runtime,kernels,enhanced);
   }catch(error){runtime.dispose();throw error;}
  }
- constructor(sim,runtime,kernels){
+ constructor(sim,runtime,kernels,enhanced){
   this.sim=sim;this.runtime=runtime;this.kernels=kernels;this.bindings=new Map();
+  this.enhanced=enhanced;
   const {nx,nz}=sim.g,n=sim.n;
   const data=new Float32Array(n*FIELDS.length);
-  FIELDS.forEach((name,i)=>data.set(sim[name],i*n));
+  FIELDS.forEach((name,i)=>{if(sim[name])data.set(sim[name],i*n);});
   this.S=runtime.createBuffer(data,{label:'Coastal state'});
-  const boundary=new Float32Array(n+8*nx+9*nz);boundary.set(sim.sponge);
+  // Immutable advected face velocities plus ping-pong breaking turbulence.
+  this.Aux=runtime.createBuffer(n*4*4,{label:'Momentum and breaking turbulence'});
+  const detail=Array.from({length:8},(_,i)=>{
+   const wavelength=8.5*Math.pow(.79,i),angle=[.24,-.42,.67,-.16,.93,-.72,.38,-.95][i];
+   const k=2*Math.PI/wavelength;
+   return [k*Math.cos(angle),k*Math.sin(angle),Math.sqrt(9.81*k),.026*Math.pow(.73,i)];
+  });
+  this.DetailW=runtime.createBuffer(new Float32Array(detail.flat()));
+  const boundary=new Float32Array(n+8*nx+9*nz);if(sim.sponge)boundary.set(sim.sponge);
   this.B=runtime.createBuffer(boundary,{label:'Coastal boundary'});
   this.W=runtime.createBuffer(new Float32Array(WAVES.flatMap(w=>[w.a,w.k,w.w,w.z,w.p])));
   this.Controls=runtime.createBuffer(new Float32Array([sim.state.strength,sim.state.wind,sim.state.tide]));
@@ -55,9 +65,10 @@ export class CudaSolver {
   // Host copies of three UI controls also drive navigation and renderer uniforms.
   for(const key of Object.keys(s.state))s.state[key]+=(s.target[key]-s.state[key])*Math.min(1,dt*.55);
   s.time+=dt;s.steps++;
-  const all={...s.g,dt,time:s.time};
+  const all={...s.g,dt,time:s.time,enhanced:Number(this.enhanced)};
   this.dispatch(batch,'updateControls',{dt,strengthTarget:s.target.strength,windTarget:s.target.wind,tideTarget:s.target.tide},1);
   this.dispatch(batch,'prepareRows',all,Math.ceil(s.g.nz/128));
+  if(this.enhanced)this.dispatch(batch,'advectMomentum',all);
   for(const entry of ['faces','limits','limitFlux','integrate','boundary'])this.dispatch(batch,entry,all);
   if(s.steps%2===0){
    const t=dt*2;
@@ -68,7 +79,9 @@ export class CudaSolver {
  }
  pack(batch,withSpray=true){
   const s=this.sim,values={...s.g,pitch:this.pitch,time:s.time,strength:s.state.strength,rockCount:ROCKS.length,step:s.steps};
-  this.dispatch(batch,'reconstruct',values);this.dispatch(batch,'packFields',values);
+  this.dispatch(batch,'reconstruct',values);
+  if(this.enhanced)this.dispatch(batch,'surfaceDetail',values);
+  this.dispatch(batch,'packFields',values);
   if(withSpray)this.dispatch(batch,'rockSpray',values,1);
  }
  initialize(hydrated=false){
@@ -85,7 +98,7 @@ export class CudaSolver {
  // Explicit testing/export only. Never called by the resident renderer.
  async sync(){
   const s=this.sim,n=s.n,data=await this.runtime.read(this.S,Float32Array,9*n*4,2*n*4);
-  FIELDS.slice(2,11).forEach((name,i)=>s[name].set(data.subarray(i*n,(i+1)*n)));
+  FIELDS.slice(2,11).forEach((name,i)=>{s[name]??=new Float32Array(n);s[name].set(data.subarray(i*n,(i+1)*n));});
  }
  dispose(){this.runtime.dispose();}
 }

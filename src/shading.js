@@ -26,7 +26,9 @@ export function createShading(noiseTex,fields){
   const h=float(0).toVar(),gx=float(0).toVar(),gz=float(0).toVar();
   const fade=smoothstep(.025,.30,depth).mul(float(1).sub(smoothstep(45,140,length(cameraPosition.xz.sub(p))))).mul(U.strength);
   for(const [x,z,w,a] of [[3.4,1.65,2.5,.012],[-2.7,4.1,3.6,.006],[1.65,.48,2.8,.028]]){const phase=p.x.mul(x).add(p.y.mul(z)).add(U.time.mul(w));h.addAssign(sin(phase).mul(a));gx.addAssign(cos(phase).mul(a*x));gz.addAssign(cos(phase).mul(a*z));}
-  return vec3(h,gx,gz).mul(fade);
+  // The resident solver has already evaluated short waves and their slopes.
+  // Keep analytic detail only in the distant water beyond the compute domain.
+  return vec3(h,gx,gz).mul(fade).mul(float(1).sub(domain(p)));
  });
  const height=Fn(([p])=>{const near=field('surface',p);return mix(offshore(p).x,near.x,domain(p)).add(ripple(p,near.y).x);});
  const cloud=Fn(([p])=>{const a=noise(p.mul(.029)).r;return a.mul(.78).add(noise(p.mul(.078).add(a.mul(.22))).r.mul(.22));});
@@ -93,13 +95,13 @@ export function createShading(noiseTex,fields){
  const layer=sin(positionWorld.y.mul(15.5).add(positionWorld.x.mul(2)).add(positionWorld.z.mul(1.2)).add(middle.mul(6))).mul(.5).add(.5);
  const seams=pow(float(1).sub(abs(layer.sub(.48)).mul(2)),24).mul(smoothstep(.37,.60,middle));
  const rockIndex=uniform(0,'uint').onObjectUpdate(({object})=>object.userData.rockIndex??ROCKS.length);
- const rockWater=fields.gpuRockState?mix(fields.gpuRockState.element(rockIndex.mul(8).add(4)),fields.gpuRockState.element(rockIndex.mul(8).add(3)),U.alpha):uniform(.24).onObjectUpdate(({object})=>object.userData.renderWetReach??.20);
+ const rockWater=mix(fields.gpuRockState.element(rockIndex.mul(8).add(4)),fields.gpuRockState.element(rockIndex.mul(8).add(3)),U.alpha);
  const rockWet=float(1).sub(smoothstep(rockWater.sub(.02),rockWater.add(.18).add(meso.mul(.13)),positionWorld.y));
  const rockColor=mix(color('#515c61'),color('#948d7e'),stoneMacro.mul(.72).add(middle.mul(.28)));
  const mineral=smoothstep(.015,.002,abs(sin(positionWorld.x.mul(.93).sub(positionWorld.z.mul(.52)).add(positionWorld.y.mul(.7)).add(middle.mul(.56))))).mul(.06);
  rock.colorNode=rockColor.mul(mix(.76,1.15,middle)).mul(mix(.84,1.07,meso)).mul(mix(1,.86,seams)).mul(mix(.82,1.12,grain)).add(color('#bab6a6').mul(mineral)).mul(mix(1,.64,rockWet));
  rock.roughnessNode=mix(float(.88),float(.44),rockWet);
- rock.normalNode=bumpMap(middle.mul(.018).add(meso.mul(.011)).add(grain.mul(.002)).sub(seams.mul(.002)),.72);
+ rock.normalNode=bumpMap(middle.mul(.008).add(meso.mul(.004)).add(grain.mul(.001)),.4);
  rock.envNode=sky(reflectVector,float(0)).mul(.17);
 
  const mirror=reflector({resolutionScale:.6,generateMipmaps:true,bounces:false,depth:true});
@@ -125,7 +127,8 @@ export function createShading(noiseTex,fields){
   const hx=surfaceSlope.x,hz=surfaceSlope.y;
   const micro=noise(mix(wp,surfaceMaterial.ba,.65).mul(.25).add(vec2(U.time.mul(.014),U.time.mul(-.007)))).ga.sub(.5).mul(.065).mul(float(1).sub(smoothstep(35,180,distance))).mul(smoothstep(.015,.20,depth));
   const normalFade=float(1).sub(smoothstep(90,950,distance));
-  const normal=normalize(vec3(hx.negate().add(micro.x).mul(normalFade),1,hz.negate().add(micro.y).mul(normalFade))).toVar();
+  const rippleDamping=float(1).sub(st.z.mul(.55).clamp(0,.7));
+  const normal=normalize(vec3(hx.negate().add(micro.x.mul(rippleDamping)).mul(normalFade),1,hz.negate().add(micro.y.mul(rippleDamping)).mul(normalFade))).toVar();
   const sunVisibility=shadow(sunLight).r.mul(cloudShadow).toVar();
   const eye=normalize(cameraPosition.sub(positionWorld));
   const ndv=clamp(dot(normal,eye),.015,1);
@@ -168,12 +171,23 @@ export function createShading(noiseTex,fields){
   const edgeGuard=smoothstep(.006,.055,mirrorProjected.x).mul(float(1).sub(smoothstep(.945,.994,mirrorProjected.x))).mul(smoothstep(.006,.04,mirrorProjected.y)).mul(float(1).sub(smoothstep(.96,.994,mirrorProjected.y)));
   const reflectedObject=float(1).sub(smoothstep(.9998,.99998,reflectedDepth));
   const reflectionColor=mix(sky(reflectionDirection,float(0)),reflected,edgeGuard.mul(reflectedObject));
-  const sunGlint=pow(max(dot(reflect(U.sun.negate(),normal),eye),0),180).mul(.42).mul(float(1).sub(U.overcast.mul(.85))).mul(sunVisibility);
+  // GGX sun reflection: a narrow bright core with a roughness-dependent tail.
+  // Derivative variance broadens distant highlights instead of sparkling.
+  const halfVector=normalize(eye.add(U.sun));
+  const ndh=max(dot(normal,halfVector),0),ndl=max(dot(normal,U.sun),0);
+  const variance=dot(dFdx(normal),dFdx(normal)).add(dot(dFdy(normal),dFdy(normal))).mul(.3);
+  const roughness=float(.085).add(foam.mul(.22));
+  const a2=roughness.pow(4).add(variance).clamp(.00008,.12);
+  const denominator=ndh.mul(ndh).mul(a2.sub(1)).add(1);
+  const distribution=a2.div(denominator.mul(denominator).mul(Math.PI));
+  const masking=ndl.div(ndl.mul(.92).add(.08)).mul(ndv.div(ndv.mul(.92).add(.08)));
+  const sunFresnel=float(.021).add(pow(float(1).sub(max(dot(eye,halfVector),0)),5).mul(.979));
+  const sunGlint=distribution.mul(masking).mul(sunFresnel).div(max(.06,ndv.mul(4))).mul(.055).mul(float(1).sub(U.overcast.mul(.85))).mul(sunVisibility);
   const result=mix(transmitted,reflectionColor,fresnel.mul(.90)).add(U.sunColor.mul(sunGlint)).toVar();
-  const crestLight=pow(max(dot(eye,U.sun.negate()),0),3).mul(smoothstep(.04,.22,hx.abs())).mul(float(1).sub(smoothstep(.6,2,depth))).mul(.075);
+  const crestLight=pow(max(dot(eye,U.sun.negate()),0),3).mul(smoothstep(.04,.22,hx.abs())).mul(float(1).sub(smoothstep(.6,2,depth))).mul(.16);
   result.addAssign(vec3(.18,.44,.34).mul(crestLight).mul(float(1).sub(U.overcast)));
-  const foamLight=float(.58).add(max(dot(normal,U.sun),0).mul(.32).mul(sunVisibility)).mul(mix(1,.87,U.overcast));
-  const ivory=mix(color('#c0d1d4'),color('#e4e9dd'),sunVisibility).mul(foamLight);
+  const foamLight=float(.78).add(max(dot(normal,U.sun),0).mul(.22).mul(sunVisibility)).mul(mix(1,.94,U.overcast));
+  const ivory=mix(color('#c9dadf'),color('#f5f5ec'),sunVisibility).mul(foamLight);
   result.assign(mix(result,ivory,foam));
   const haze=float(1).sub(exp(distance.mul(-.00056)));
   result.assign(mix(result,color('#adc2ca'),haze));

@@ -2,6 +2,40 @@
   "passed": true,
   "cases": [
     {
+      "name": "enhanced: lake at rest",
+      "passed": true,
+      "maxDrift": 0,
+      "maxTurbulence": 0
+    },
+    {
+      "name": "enhanced: closed-domain volume",
+      "passed": true,
+      "relativeVolumeError": 1.1693015345794551e-8,
+      "positive": true,
+      "finite": true
+    },
+    {
+      "name": "enhanced: momentum carried by cross-flow",
+      "passed": true,
+      "maxError": 3.725290298461914e-9
+    },
+    {
+      "name": "enhanced: breaking turbulence persists, decays and dries",
+      "passed": true,
+      "initial": 0.24761506915092468,
+      "decayed": 0.10583425313234329,
+      "expected": 0.10583437793062173,
+      "dry": 0
+    },
+    {
+      "name": "enhanced: moving wave detail preserves physical depth and dry cells",
+      "passed": true,
+      "depthUnchanged": true,
+      "dryUnchanged": true,
+      "maxDisplacement": 0.06479144841432571,
+      "maxMotion": 0.09509354084730148
+    },
+    {
       "name": "CUDA procedural initialization",
       "passed": true,
       "delta": {
@@ -57,7 +91,7 @@
       "volumeError": 0,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 19.40000000037253
+      "elapsedMs": 14.099999999627471
     },
     {
       "name": "closed domain water conservation",
@@ -88,7 +122,7 @@
       "volumeError": 3.1492687305857045e-8,
       "conservationError": 2.7912467566142967e-8,
       "errors": [],
-      "elapsedMs": 33
+      "elapsedMs": 42.19999999925494
     },
     {
       "name": "wet dry front, obstacles and controls",
@@ -119,7 +153,7 @@
       "volumeError": 2.9830601616351476e-7,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 33.80000000074506
+      "elapsedMs": 37.90000000037253
     },
     {
       "name": "full grid baked shoreline",
@@ -150,7 +184,7 @@
       "volumeError": 2.1692809071220032e-9,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 372.69999999925494
+      "elapsedMs": 401.90000000037253
     },
     {
       "name": "30 simulated seconds from cold start",
@@ -160,13 +194,13 @@
       "positive": true,
       "metrics": {
         "time": 29.999999999999577,
-        "maxH": 4.896744251251221,
-        "volume": 16712.80587811062,
-        "foam": 33648.45276985972,
-        "wetCells": 88250,
+        "maxH": 4.895544528961182,
+        "volume": 16551.420293779625,
+        "foam": 44536.053048541806,
+        "wetCells": 85655,
         "nonfinite": 0
       },
-      "volumeReductionError": 3.0496737988851435e-7
+      "volumeReductionError": 2.2469650262787773e-8
     }
   ],
   "adapter": {

@@ -1,4 +1,4 @@
-import {cp,mkdir,rm,writeFile} from 'node:fs/promises';
+import {cp,mkdir,rm,writeFile,access} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join,resolve,dirname} from 'node:path';
 
@@ -9,4 +9,8 @@ for(const name of ['index.html','style.css','initial-state.bin.gz','src','vendor
  await cp(join(root,name),join(dist,name),{recursive:true});
 }
 await writeFile(join(dist,'.nojekyll'),'');
+for(const forbidden of ['tests','src/worker.js','src/simulation.js','src/solver-kernels.wasm','src/solver-accelerator.js','src/spray.js','src/noise.js']){
+ const exists=await access(join(dist,forbidden)).then(()=>true,()=>false);
+ if(exists)throw Error(`Development/CPU fallback code must not be deployed: ${forbidden}`);
+}
 console.log('Static site built in dist/');

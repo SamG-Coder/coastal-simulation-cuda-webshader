@@ -10,12 +10,12 @@ try{
  const report=await page.evaluate(async()=>{
   const app=window.saltreach;app.setPause(true);app.renderer.setAnimationLoop(null);
   const device=app.renderer.backend.device;await device.queue.onSubmittedWorkDone();
-  const {ShoreSimulation}=await import('/src/simulation.js'),{CudaSolver}=await import('/src/cuda-solver.js');
+  const {ShoreSimulation}=await import('/tests/reference/simulation.js'),{CudaSolver}=await import('/src/cuda-solver.js');
   const response=await fetch('/initial-state.bin.gz'),baked=new Float32Array(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
   const summary=a=>{const b=a.slice().sort((x,y)=>x-y);return {meanMs:a.reduce((x,y)=>x+y,0)/a.length,medianMs:b[Math.floor(b.length/2)],p95Ms:b[Math.floor(b.length*.95)],samplesMs:a};};
   async function run(resident){
    const sim=new ShoreSimulation();['h','u','v','foam','old','wet','film','qx','qz'].forEach((key,i)=>sim[key].set(baked.subarray(8+i*sim.n,8+(i+1)*sim.n)));sim.time=baked[3];sim.steps=baked[4];
-   const solver=await CudaSolver.create(sim,{device}),{nx,nz}=sim.g,textures=Array.from({length:3},()=>device.createTexture({size:[nx,nz],format:'rgba32float',usage:GPUTextureUsage.COPY_DST|GPUTextureUsage.TEXTURE_BINDING}));
+   const solver=await CudaSolver.create(sim,{device,enhanced:false}),{nx,nz}=sim.g,textures=Array.from({length:3},()=>device.createTexture({size:[nx,nz],format:'rgba32float',usage:GPUTextureUsage.COPY_DST|GPUTextureUsage.TEXTURE_BINDING}));
    let reuse;const samples=[];const before={...solver.runtime.stats};
    try{
     for(let frame=0;frame<110;frame++){

@@ -1,20 +1,22 @@
-import {ShoreSimulation} from './simulation.js';
+import {GpuState} from './gpu-state.js';
 import {CudaSolver,FIELDS} from './cuda-solver.js';
 import {shareStorage,initializeFieldTextures,copyFields} from './gpu-interop.js';
 import {GRID,ROCKS} from './coast.js';
 
 export class ResidentCoast {
  static async create(renderer,fields){
-  const sim=new ShoreSimulation(GRID,{initialize:false});let hydrated=false;
+  const sim=new GpuState(GRID);let hydrated=false;
   try{
    const response=await fetch(new URL('../initial-state.bin.gz',import.meta.url));
    if(!response.ok)throw Error('No baked state');
    const a=new Float32Array(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
    if(a[0]!==185||a[1]!==sim.g.nx||a[2]!==sim.g.nz||a.length!==8+sim.n*9)throw Error('Incompatible state');
-   FIELDS.slice(2,11).forEach((key,i)=>sim[key].set(a.subarray(8+i*sim.n,8+(i+1)*sim.n)));
+   FIELDS.slice(2,11).forEach((key,i)=>sim[key]=a.subarray(8+i*sim.n,8+(i+1)*sim.n));
    sim.time=a[3];sim.steps=a[4];hydrated=true;
   }catch{}
   const solver=await CudaSolver.create(sim,{device:renderer.backend.device});
+  // The one-time baked upload no longer needs a host-side copy.
+  for(const key of FIELDS)delete sim[key];
   solver.initialize(hydrated);
   if(!hydrated){
    for(let block=0;block<36;block++){

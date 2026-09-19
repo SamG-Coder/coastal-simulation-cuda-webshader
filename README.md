@@ -13,9 +13,11 @@ it is not the original implementation. Original MIT attribution is retained.
 This port runs simulation, surface reconstruction and dynamic effects through
 SamG-Coder's CUDA WebShader compiler and WebGPU runtime. CUDA writes directly to
 resources shared with the Three.js renderer, keeping simulation fields on the
-GPU. The original coastline, lighting, materials, navigation and controls remain.
+GPU. The original coastline and scene are retained, with enhanced wave motion,
+water shading and free-flight controls.
 
-Port additions include GPU-resident simulation/render data, CUDA reconstruction,
+Port additions include GPU-resident simulation/render data, momentum advection,
+persistent breaking turbulence, directional short waves, CUDA reconstruction,
 spray and diagnostics, a free-fly camera, and an on-screen FPS counter.
 See [CREDITS.md](CREDITS.md) for source revisions and component licenses.
 
@@ -33,14 +35,31 @@ required: the bundled compiler translates `src/coastal-kernels.cu` and
 
 - `?profile` exposes CPU submission timings, GPU resource counters, and small
   diagnostic summaries. It also enables Three.js rendering timestamps.
-- `?solver=cpu` explicitly selects the original WebAssembly/JavaScript solver.
-- `?solver=cpu&webgl=1` also selects the WebGL 2 renderer for compatibility.
-- `?solver=legacy` retains the GPU solver with the previous CPU reconstruction
-  and readback pipeline for comparison.
 - `window.saltreach.diagnostics.solver` identifies the active simulation backend.
 
-CUDA initialization failures are reported in the UI, with an explicit link to
-compatibility mode. The app does not silently substitute CPU execution.
+**WebGPU is required. There is no CPU, WebAssembly, WebGL or legacy readback
+fallback.** Old solver query parameters do not change the backend. GPU startup
+failures show an error; they never switch execution to the CPU. CPU reference
+code lives only under `tests/reference/`, which is excluded from deployment.
+
+## Enhanced waves
+
+- CUDA advects staggered face velocities before pressure and conservative
+  volume transport, allowing currents and backwash to carry momentum.
+- Compressive, steep fronts and rock impacts generate a bounded turbulence
+  reservoir. It travels with the flow, dissipates over time, increases drag,
+  and feeds persistent whitewater after a breaker has passed.
+- Eight directional short-wave bands are evaluated in CUDA at field publication
+  time. Deep-water gravity-wave dispersion sets their speeds; a second harmonic
+  sharpens crests. Detail fades in shallow water, beneath foam, and at grid edges.
+- Water uses roughness-dependent GGX sun highlights with derivative filtering,
+  brighter foam and stronger backlit crest colour.
+
+The main model remains a 2D shallow-water heightfield, not an overturning 3D
+fluid simulation. The short waves are rendering detail and do not add physical
+water volume. Turbulence/foam coupling is a visual approximation. The techniques
+draw on [Bridson's fluid simulation notes](https://www.cs.ubc.ca/~rbridson/fluidsimulation/)
+and [NVIDIA's water rendering chapter](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models).
 
 ## Fly camera
 
@@ -54,12 +73,13 @@ the controls. FPS and frame time remain visible in the upper-left corner.
 
 ## Port details
 
-The 19 CUDA entry points cover:
+The 21 CUDA entry points cover:
 
 - Procedural terrain/obstacle grid initialization, boundary coefficients and
   the 512 × 512 material-noise texture.
 - Condition smoothing, incoming wave rows, staggered velocities, positive
   volume transport, radiation boundaries, foam, wet sand and film decay.
+- Momentum advection, transported breaking turbulence and directional surface detail.
 - Dry shoreline surface reconstruction, connected-water normals, and packing
   surface/material/flow fields into GPU buffers with aligned row pitches.
 - Rock wetness persistence, spray emission, ballistic motion, size and fade.
@@ -101,14 +121,15 @@ of the local CUDA WebShader checkout. Three.js remains at the upstream revision.
 ## Validation
 
 ```sh
-npm test          # Compile all 19 CUDA entries
+npm test          # Audit deployed imports and compile all 21 CUDA entries
 npm run test:gpu  # Numerical, conservation and stability tests in Edge WebGPU
 npm run test:app  # Texture interop, scene, controls, errors and cold-start paths
 npm run bench     # Completed-GPU simulation-to-render pipeline comparison
+npm run bench:realism # Previous versus enhanced GPU model, completed updates
 npm run bench:app # Exploratory browser-paced FPS measurements
 ```
 
-The browser tests use Playwright and an installed Microsoft Edge. Numerical
+The browser tests use Playwright and an installed Microsoft Edge. Reference-mode
 tests compare every value in all nine output fields with the original JS
 solver, including partial workgroups, resting water, a closed domain, wet/dry
 fronts, obstacles, changed controls, and the complete 241 × 401 baked shoreline.
@@ -116,7 +137,11 @@ A separate GPU run checks 30 simulated seconds from a cold start. Tests also
 compare reconstructed render fields, procedural initialization, material noise,
 spray motion and GPU diagnostic reductions. The application test verifies exact
 texture-copy contents and deliberately throws if CPU simulation/packing or
-full-state synchronization is used by the resident render path.
+full-state synchronization is used by the resident render path. Enhanced-model
+tests independently check equilibrium, momentum transport, volume conservation,
+turbulence persistence/decay, drying, and render detail without changing depth.
+Application checks also verify that no CPU modules load, old fallback links stay
+on CUDA, and unavailable WebGPU fails without creating a fallback renderer.
 
 Reports are in `reports/gpu-validation.json` and `reports/app-validation.json`.
 The application check also writes `reports/coastal-cuda.png` (not tracked).
@@ -127,6 +152,17 @@ implementation within 6e-8; the actual renderer textures matched CUDA output
 exactly. CPU and GPU initialization are tested separately.
 
 ## Performance
+
+The enhanced model averaged **3.164 ms** per completed update versus **3.133 ms**
+for the original GPU-resident model in three alternating-order rounds on this
+machine. The 0.031 ms difference is small compared with run-to-run variation;
+this is evidence of similar pipeline cost, not a guaranteed FPS improvement.
+Both paths perform two physics steps, reconstruction, spray and three texture
+copies with drawing paused. Neither transfers evolving fields to the CPU.
+See `reports/realism-performance.json` and `npm run bench:realism`.
+
+The following earlier benchmark isolates the original port's removal of field
+readback. Its CPU reference now exists only in development tooling:
 
 The controlled benchmark processes two 60 Hz solver steps and produces all
 three render textures, waiting for GPU completion after every sample. Three

@@ -10,7 +10,23 @@ __device__ float adv(const float *p,int k,int nx,float ax,float fx,float az,floa
  return (p[k]*ax+p[k+1]*fx)*az+(p[k+nx]*ax+p[k+nx+1]*fx)*fz;
 }
 
-__global__ void faces(float *S,int nx,int nz,float dx,float dz,float dt) {
+// Backtrace each staggered velocity from its own face location. The other
+// component is interpolated from the four surrounding faces. A separate
+// dispatch is essential: faces must never sample neighbours being overwritten.
+__global__ void advectMomentum(const float *S,float *Aux,int nx,int nz,float dx,float dz,float dt){
+ int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
+ int i=k%nx,j=k/nx;const float *u=S+3*n;const float *v=S+4*n;
+ int l=max(i-1,0),r=min(i+1,nx-1),b=max(j-1,0),f=min(j+1,nz-1);
+ float crossV=(v[k]+v[j*nx+r]+v[b*nx+i]+v[b*nx+r])*.25f;
+ float crossU=(u[k]+u[f*nx+i]+u[j*nx+l]+u[f*nx+l])*.25f;
+ float bx=cap((float)i-u[k]*dt/dx,0.0f,(float)nx-1.001f),bz=cap((float)j-crossV*dt/dz,0.0f,(float)nz-1.001f);
+ int ix=(int)bx,iz=(int)bz;float fx=bx-(float)ix,fz=bz-(float)iz;
+ Aux[k]=i<nx-1?adv(u,iz*nx+ix,nx,1.0f-fx,fx,1.0f-fz,fz):0.0f;
+ bx=cap((float)i-crossU*dt/dx,0.0f,(float)nx-1.001f);bz=cap((float)j-v[k]*dt/dz,0.0f,(float)nz-1.001f);
+ ix=(int)bx;iz=(int)bz;fx=bx-(float)ix;fz=bz-(float)iz;
+ Aux[n+k]=j<nz-1?adv(v,iz*nx+ix,nx,1.0f-fx,fx,1.0f-fz,fz):0.0f;
+}
+__global__ void faces(float *S,const float *Aux,int nx,int nz,float dx,float dz,float dt,int enhanced) {
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;
  if(k>=n)return;
  int i=k%nx,j=k/nx;
@@ -19,8 +35,9 @@ __global__ void faces(float *S,int nx,int nz,float dx,float dz,float dt) {
  if(i<nx-1){
   int q=k+1;float e2=bed[q]+h[q],crest=fmaxf(bed[k],bed[q]),faceH=fmaxf(0.0f,fmaxf(eta,e2)-crest);
   if(faceH<.001f){u[k]=0;fluxX[k]=0;}else{
-   float drag=.065f+.08f/(faceH+.075f);
-   u[k]=cap((u[k]-9.81f*dt*(e2-eta)/dx)/(1.0f+dt*drag),-5.0f,5.0f);
+   float drag=.065f+.08f/(faceH+.075f)+(enhanced!=0?Aux[2*n+k]*.35f:0.0f);
+   float velocity=enhanced!=0?Aux[k]:u[k];
+   u[k]=cap((velocity-9.81f*dt*(e2-eta)/dx)/(1.0f+dt*drag),-5.0f,5.0f);
    float donor=u[k]>0?fmaxf(0.0f,eta-crest):fmaxf(0.0f,e2-crest);
    fluxX[k]=u[k]*donor;
    if(h[k]>.008f&&h[q]>.008f)fluxX[k]-=.32f*smooth(.12f,.48f,fabsf(e2-eta)/dx)*(e2-eta)/dx;
@@ -29,8 +46,9 @@ __global__ void faces(float *S,int nx,int nz,float dx,float dz,float dt) {
  if(j<nz-1){
   int q=k+nx;float e2=bed[q]+h[q],crest=fmaxf(bed[k],bed[q]),faceH=fmaxf(0.0f,fmaxf(eta,e2)-crest);
   if(faceH<.001f){v[k]=0;fluxZ[k]=0;}else{
-   float drag=.065f+.08f/(faceH+.075f);
-   v[k]=cap((v[k]-9.81f*dt*(e2-eta)/dz)/(1.0f+dt*drag),-5.0f,5.0f);
+   float drag=.065f+.08f/(faceH+.075f)+(enhanced!=0?Aux[2*n+k]*.35f:0.0f);
+   float velocity=enhanced!=0?Aux[n+k]:v[k];
+   v[k]=cap((velocity-9.81f*dt*(e2-eta)/dz)/(1.0f+dt*drag),-5.0f,5.0f);
    float donor=v[k]>0?fmaxf(0.0f,eta-crest):fmaxf(0.0f,e2-crest);
    fluxZ[k]=v[k]*donor;
    if(h[k]>.008f&&h[q]>.008f)fluxZ[k]-=.32f*smooth(.12f,.48f,fabsf(e2-eta)/dz)*(e2-eta)/dz;
@@ -73,7 +91,7 @@ __global__ void boundary(float *S,const float *B,const float *Controls,int nx,in
  if(next[k]<.0015f)next[k]*=expf(-dt*1.5f);
  h[k]=next[k];
 }
-__global__ void transport(float *S,const float *Controls,int nx,int nz,float dx,float dz,float x0,float z0,float dt){
+__global__ void transport(float *S,float *Aux,const float *Controls,int nx,int nz,float dx,float dz,float x0,float z0,float dt,int enhanced){
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
  int i=k%nx,j=k/nx;
  float *bed=S;float *sand=S+n;float *h=S+2*n;float *u=S+3*n;float *v=S+4*n;float *foam=S+5*n;float *old=S+6*n;float *wet=S+7*n;float *film=S+8*n;float *qx=S+9*n;float *qz=S+10*n;
@@ -95,6 +113,16 @@ __global__ void transport(float *S,const float *Controls,int nx,int nz,float dx,
  float impact=obstacle?smooth(.65f,1.6f,speed)*smooth(.04f,.3f,depth)*(1.0f-smooth(.3f,.9f,depth))*smooth(.12f,1.0f,compression):0.0f;
  float advancingEdge=front*smooth(.15f,.95f,-ux)*(obstacle?.08f:1.0f);
  float source=(bore*(obstacle?.65f:2.65f)+advancingEdge*.90f+impact*.9f)*strength;
+ if(enhanced!=0){
+  // A bounded visual turbulence reservoir, carried by the water and dissipated
+  // over seconds. Compression/steepness inject it; smooth uniform flow does not.
+  float energy=adv(Aux+2*n,k0,nx,ax,fx,az,fz);
+  float generated=bore*2.4f+impact*1.8f;
+  energy=depth>.006f?cap(energy*expf(-dt*.85f)+dt*generated,0.0f,1.0f):0.0f;
+  Aux[3*n+k]=energy;
+  source+=energy*1.7f;
+  freshDecay=expf(-dt*(.48f+.32f*(1.0f-energy)));
+ }
  if(depth>.002f){
   foamNext[k]=cap(f*freshDecay+dt*source,0.0f,1.0f);oldNext[k]=cap(o*oldDecay+f*dt*.35f,0.0f,.85f);
   wet[k]=fminf(1.0f,wet[k]+dt*2.5f);film[k]=fmaxf(film[k],fminf(1.0f,depth*5.0f));
@@ -102,8 +130,9 @@ __global__ void transport(float *S,const float *Controls,int nx,int nz,float dx,
  qxNext[k]=adv(qx,k0,nx,ax,fx,az,fz)*(1.0f-restore)+(x0+(float)i*dx)*restore;
  qzNext[k]=adv(qz,k0,nx,ax,fx,az,fz)*(1.0f-restore)+(z0+(float)j*dz)*restore;
 }
-__global__ void commitTransport(float *S,int nx,int nz){
+__global__ void commitTransport(float *S,float *Aux,int nx,int nz,int enhanced){
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
  S[5*n+k]=S[15*n+k];S[6*n+k]=S[16*n+k];S[9*n+k]=S[17*n+k];S[10*n+k]=S[18*n+k];
+ if(enhanced!=0)Aux[2*n+k]=Aux[3*n+k];
 }
 
