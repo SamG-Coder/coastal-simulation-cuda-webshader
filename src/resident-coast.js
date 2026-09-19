@@ -1,13 +1,13 @@
-import {GpuState} from './gpu-state.js';
-import {CudaSolver,FIELDS} from './cuda-solver.js';
-import {shareStorage,initializeFieldTextures,copyFields} from './gpu-interop.js';
-import {GRID,ROCKS} from './coast.js';
+import {GpuState} from './gpu-state.js?v=1.5.0';
+import {CudaSolver,FIELDS} from './cuda-solver.js?v=1.5.0';
+import {shareStorage,initializeFieldTextures,copyFields} from './gpu-interop.js?v=1.5.0';
+import {GRID,ROCKS} from './coast.js?v=1.5.0';
 
 export class ResidentCoast {
  static async create(renderer,fields){
   const sim=new GpuState(GRID);let hydrated=false;
   try{
-   const response=await fetch(new URL('../initial-state.bin.gz',import.meta.url));
+   const response=await fetch(new URL('../initial-state.bin.gz?v=1.5.0',import.meta.url));
    if(!response.ok)throw Error('No baked state');
    const a=new Float32Array(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
    if(a[0]!==185||a[1]!==sim.g.nx||a[2]!==sim.g.nz||a.length!==8+sim.n*9)throw Error('Incompatible state');

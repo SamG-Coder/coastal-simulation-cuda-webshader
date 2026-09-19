@@ -57,6 +57,6 @@ export async function checkRealism(report){
   let maxDisplacement=0,maxMotion=0;
   for(let k=0;k<s.n;k++)if(s.h[k]>0){maxDisplacement=Math.max(maxDisplacement,Math.abs(a[k]));maxMotion=Math.max(maxMotion,Math.abs(a[k]-b[k]));}
   const depthUnchanged=s.h.every((h,k)=>h===(k===20*g.nx+20?0:1)),dryUnchanged=a[20*g.nx+20]===b[20*g.nx+20];
-  return {passed:depthUnchanged&&dryUnchanged&&maxDisplacement>.02&&maxDisplacement<.12&&maxMotion>.01,depthUnchanged,dryUnchanged,maxDisplacement,maxMotion};
+  return {passed:depthUnchanged&&dryUnchanged&&maxDisplacement>.04&&maxDisplacement<.2&&maxMotion>.03,depthUnchanged,dryUnchanged,maxDisplacement,maxMotion};
  });
 }

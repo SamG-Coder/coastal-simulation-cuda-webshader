@@ -1,4 +1,4 @@
-import {GRID} from './coast.js';
+import {GRID} from './coast.js?v=1.5.0';
 
 // Host metadata only. Evolving cell fields live exclusively in CUDA buffers.
 export class GpuState {

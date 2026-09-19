@@ -54,11 +54,15 @@ __global__ void surfaceDetail(const float *S,const float *Aux,const float *Detai
  Eta[k]+=height*fade*Controls[0];
 }
 // Padded row pitch allows three GPU buffer-to-texture copies, with no host data.
-__global__ void packFields(const float *S,const float *Eta,float4 *Out,int nx,int nz,int pitch,float dx,float dz){
+__global__ void packFields(const float *S,const float *Eta,float4 *Out,int nx,int nz,int pitch,float dx,float dz,int enhanced){
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
  int i=k%nx,j=k/nx,q=j*pitch+i,size=pitch*nz;
  const float *bed=S;const float *h=S+2*n;float e=Eta[k];
- Out[q]=make_float4(e,e-bed[k],S[5*n+k],S[6*n+k]);
+ // A dry cliff vertex must clip the water triangle, not stretch a nearly-zero
+ // signed depth up the rock wall into a thin turquoise spike.
+ float visibleDepth=e-bed[k];
+ if(enhanced!=0&&h[k]<.025f&&bed[k]-S[n+k]>.08f)visibleDepth=fminf(visibleDepth,-3.0f);
+ Out[q]=make_float4(e,visibleDepth,S[5*n+k],S[6*n+k]);
  Out[size+q]=make_float4(S[7*n+k],S[8*n+k],S[9*n+k],S[10*n+k]);
  bool l=i>0&&h[k-1]>=.0005f&&fminf(e,Eta[k-1])>fmaxf(bed[k],bed[k-1]);
  bool r=i<nx-1&&h[k+1]>=.0005f&&fminf(e,Eta[k+1])>fmaxf(bed[k],bed[k+1]);
@@ -80,10 +84,10 @@ __device__ float rockHeight(const float *R,int r,float x,float z){
  float a=(R[o+7]*xx+R[o+8]*zz)/R[o+2],b=(-R[o+8]*xx+R[o+7]*zz)/R[o+3];
  float theta=atan2f(b,a),edge=1.0f+.075f*sinf(theta*3.0f+R[o+5])+.037f*cosf(theta*5.0f-R[o+5]);
  float q=powf(fabsf(a/edge),2.65f)+powf(fabsf(b/edge),2.65f);if(q>=1.0f)return -100.0f;
- float worn=powf(1.0f-q,.37f),top=sminRock(worn,.76f+.12f*a-.095f*b,.055f);
+ float worn=powf(1.0f-q,.56f),top=sminRock(worn,.98f+.42f*a-.29f*b,.024f);
  top=sminRock(top,.97f+.58f*a+.21f*b,.048f);top=sminRock(top,1.06f-.24f*a-.69f*b,.050f);top=sminRock(top,1.08f+.18f*a+.68f*b,.05f);
  float fracture=.022f*expf(-fabsf(a+.39f*b-.16f)*65.0f)*smooth(.2f,.9f,top);
- float strata=.010f*sinf(a*14.0f+b*7.0f+R[o+5])+.006f*sinf(a*29.0f-b*17.0f);
+ float strata=.065f*sinf(a*11.0f+b*5.0f+R[o+5])*sinf(b*13.0f-a*3.0f+R[o+5])+.026f*sinf(a*29.0f-b*17.0f);
  return R[o+6]+R[o+4]*(top+strata*worn-fracture);
 }
 __device__ float randomSpray(unsigned int seed){
@@ -112,14 +116,14 @@ __global__ void initializeState(float *S,float *B,const float *R,int nx,int nz,f
  B[k]=fmaxf(smooth((float)nx-26.0f,(float)nx-2.0f,(float)i),fmaxf(smooth(12.0f,0.0f,(float)j),smooth((float)nz-13.0f,(float)nz-1.0f,(float)j)));
  if(hydrated==0){S[2*n+k]=fmaxf(0.0f,-bed);S[7*n+k]=smooth(.3f,-.1f,sand);S[9*n+k]=x;S[10*n+k]=z;}
 }
-// One thread owns each rock and its 24 particle slots: no atomics or CPU spawn.
+// One thread owns each rock and its bounded particle ring: no CPU spawning.
 // RockState records: sampled level,time,last hit,wet reach,previous reach,total,cursor,pad.
 __global__ void initializeContacts(float *RockState,int rockCount,float time){
  int r=blockIdx.x*blockDim.x+threadIdx.x;if(r>rockCount)return;
  int a=r*8;RockState[a]=0;RockState[a+1]=time;RockState[a+2]=-10;RockState[a+3]=r==rockCount?.2f:.24f;
  RockState[a+4]=RockState[a+3];RockState[a+5]=0;RockState[a+6]=0;RockState[a+7]=0;
 }
-__global__ void rockSpray(const float *S,const float *Eta,const float *R,const float *Controls,float *RockState,float *Particles,int nx,int nz,int rockCount,int step,float x0,float z0,float dx,float dz,float time){
+__global__ void rockSpray(const float *S,const float *Eta,const float *R,const float *Controls,float *RockState,float *Particles,int nx,int nz,int rockCount,int slots,int step,float x0,float z0,float dx,float dz,float time){
  int r=blockIdx.x*blockDim.x+threadIdx.x;if(r>=rockCount)return;
  int n=nx*nz,o=r*10,a=r*8;float strength=Controls[0];
  float x=R[o]+R[o+2]*1.1f,z=R[o+1];
@@ -129,17 +133,26 @@ __global__ void rockSpray(const float *S,const float *Eta,const float *R,const f
  float dt=fmaxf(.02f,time-RockState[a+1]),rise=(level-RockState[a])/dt;
  float wetLevel=sampleScalar(Eta,R[o]+R[o+2]*1.16f,z,nx,nz,x0,z0,dx,dz);
  RockState[a+4]=RockState[a+3];RockState[a+3]=fmaxf(RockState[a+3]-.008f*dt,wetLevel+.07f);
- if(depth>.08f&&speed>.6f&&rise>.08f&&time-RockState[a+2]>.35f&&R[o+6]+R[o+4]>level+.15f){
-  int amount=min(12,(int)(2.0f+speed*3.0f*strength)),cursor=(int)RockState[a+6];
+ if(depth>.08f&&speed>.45f&&rise>.045f&&time-RockState[a+2]>.5f&&R[o+6]+R[o+4]>level+.15f){
+  float force=cap(speed*.65f+fmaxf(rise,0.0f)*.3f,.4f,2.8f);
+  int amount=min(slots/2,(int)(60.0f+force*55.0f*strength)),cursor=(int)RockState[a+6];
+  // Find the central impact face once; droplets fan out from this contact.
+  float contact=R[o]+R[o+2]*1.5f;
+  for(int b=0;b<32;b++){if(rockHeight(R,r,contact,z)>level)break;contact-=R[o+2]*.05f;}
   for(int j=0;j<amount;j++){
    unsigned int seed=(unsigned int)(r*7919+step*173+j*37);
-   float zz=z+(randomSpray(seed)-.5f)*R[o+3]*1.3f,xx=R[o]+R[o+2]*1.5f;
-   for(int b=0;b<25;b++){if(rockHeight(R,r,xx,zz)>level)break;xx-=R[o+2]*.06f;}
-   int p=(r*24+cursor)*12;
-   Particles[p]=xx+.03f;Particles[p+1]=level+.025f;Particles[p+2]=zz;Particles[p+3]=time;
-   Particles[p+4]=.28f+randomSpray(seed+1u)*.35f;Particles[p+5]=.25f+randomSpray(seed+2u)*.55f;
-   Particles[p+6]=.9f+randomSpray(seed+3u)*1.2f;Particles[p+7]=(randomSpray(seed+4u)-.5f)*.65f;
-   Particles[p+8]=.012f+randomSpray(seed+5u)*.021f;cursor=(cursor+1)%24;
+   float spread=randomSpray(seed)-.5f,zz=z+spread*R[o+3]*.9f,xx=contact+.06f+randomSpray(seed+8u)*.12f;
+   // Dense spindrift sheets at the impact, fine droplets and slower mist above.
+   float kind=j%4==0?1.0f:j%4==1?2.0f:0.0f,mist=kind==1.0f?1.0f:0.0f;
+   float launch=(4.0f+force*4.0f)*(.58f+randomSpray(seed+3u)*.62f);
+   int p=(r*slots+cursor)*12;
+   Particles[p]=xx;Particles[p+1]=fmaxf(level+.035f,rockHeight(R,r,xx,zz)+.03f);Particles[p+2]=zz;
+   Particles[p+3]=time+randomSpray(seed+6u)*.13f;
+   Particles[p+4]=.55f+launch*.12f+mist*.4f;Particles[p+5]=.3f+randomSpray(seed+2u)*force*.8f;
+   Particles[p+6]=launch;Particles[p+7]=spread*(1.5f+force)+Controls[1]*.012f;
+   Particles[p+8]=mist>0?.25f+randomSpray(seed+5u)*.25f:kind>1.0f?.10f+randomSpray(seed+5u)*.12f:.018f+randomSpray(seed+5u)*.045f;
+   Particles[p+9]=kind;Particles[p+10]=randomSpray(seed+7u);Particles[p+11]=level;
+   cursor=(cursor+1)%slots;
   }
   RockState[a+5]+=(float)amount;RockState[a+6]=(float)cursor;RockState[a+2]=time;
  }
@@ -150,8 +163,14 @@ __global__ void sprayVertices(const float *Particles,float4 *Spray,int count,flo
  int k=blockIdx.x*blockDim.x+threadIdx.x;if(k>=count)return;
  int p=k*12;float t=time-Particles[p+3],life=Particles[p+4];
  if(t<0.0f||t>life||life<=0.0f){Spray[2*k]=make_float4(0,0,0,0);Spray[2*k+1]=make_float4(0,0,0,0);return;}
- Spray[2*k]=make_float4(Particles[p]+Particles[p+5]*t,Particles[p+1]+Particles[p+6]*t-4.905f*t*t,Particles[p+2]+Particles[p+7]*t,(1.0f-t/life)*.68f);
- Spray[2*k+1]=make_float4(Particles[p+8],Particles[p+8]*(1.4f+t),0,0);
+ float kind=Particles[p+9],mist=kind==1.0f?1.0f:0.0f,travel=mist>0?(1.0f-expf(-t*1.4f))/1.4f:t;
+ float y=Particles[p+1]+Particles[p+6]*travel-(mist>0?2.2f:4.905f)*t*t;
+ float fade=(1.0f-t/life)*(mist>0?.46f:.82f)*smooth(0.0f,.06f,t);
+ // Droplets disappear into the water instead of falling through the seabed.
+ fade*=smooth(Particles[p+11]-.04f,Particles[p+11]+.12f,y);
+ Spray[2*k]=make_float4(Particles[p]+Particles[p+5]*travel,y,Particles[p+2]+Particles[p+7]*travel,fade);
+ float size=Particles[p+8]*(1.0f+mist*t*2.2f);
+ Spray[2*k+1]=make_float4(size,size*(mist>0?1.0f:1.7f),kind,Particles[p+10]);
 }
 // Hierarchical diagnostic reduction; only the 8-float final result is read back.
 __global__ void metricsPartials(const float *S,float *Part,int nx,int nz,float dx,float dz){

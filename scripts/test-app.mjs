@@ -49,13 +49,13 @@ try{
  report.obsoleteFallbackQuery=await page.evaluate(()=>({ready:window.saltreach.diagnostics.ready,solver:window.saltreach.diagnostics.solver,backend:window.saltreach.diagnostics.backend,workers:typeof window.saltreach.resident.sim.step}));
  report.noCpuModulesLoaded=!loaded.some(url=>/\/(reference|worker\.js|simulation\.js|solver-accelerator\.js|solver-kernels\.wasm|noise\.js|spray\.js)/.test(new URL(url).pathname));
  report.passed&&=report.obsoleteFallbackQuery.solver==='CUDA WebShader / WebGPU'&&report.obsoleteFallbackQuery.backend==='WebGPU'&&report.noCpuModulesLoaded;
- await page.route('**/coastal-kernels.cu',route=>route.fulfill({status:503,body:'Unavailable for error-path test'}));
+ await page.route('**/coastal-kernels.cu*',route=>route.fulfill({status:503,body:'Unavailable for error-path test'}));
  await page.goto(`http://127.0.0.1:${server.address().port}/`);
  await page.waitForFunction(()=>!document.querySelector('#error').hidden,null,{timeout:120000});
  report.cudaFailure=await page.evaluate(()=>({message:document.querySelector('#error-detail').textContent,fallback:!!document.querySelector('#error a'),ready:window.saltreach?.diagnostics.ready}));
  report.passed&&=report.cudaFailure.message.includes('CUDA source: HTTP 503')&&!report.cudaFailure.fallback&&report.cudaFailure.ready!==true;
- await page.unroute('**/coastal-kernels.cu');
- await page.route('**/initial-state.bin.gz',route=>route.fulfill({status:404,body:'Cold-start test'}));
+ await page.unroute('**/coastal-kernels.cu*');
+ await page.route('**/initial-state.bin.gz*',route=>route.fulfill({status:404,body:'Cold-start test'}));
  await page.goto(`http://127.0.0.1:${server.address().port}/`);
  await page.waitForFunction(()=>window.saltreach?.diagnostics.ready||!document.querySelector('#error').hidden,null,{timeout:120000});
  report.coldStart=await page.evaluate(()=>({ready:window.saltreach?.diagnostics.ready,time:window.saltreach?.time,metrics:window.saltreach?.diagnostics.metrics,error:document.querySelector('#error-detail').textContent}));

@@ -1,12 +1,12 @@
 import * as THREE from 'three/webgpu';
-import {terrainHeight,clamp} from './coast.js?v=1.3.0';
-import {isInterfaceEvent,routeBetween,prepareRoute,pointOnRoute} from './navigation.js?v=1.3.0';
-import {VIEWS} from './views.js?v=1.3.0';
+import {terrainHeight,clamp} from './coast.js?v=1.5.0';
+import {isInterfaceEvent,routeBetween,prepareRoute,pointOnRoute} from './navigation.js?v=1.5.0';
+import {VIEWS} from './views.js?v=1.5.0';
 export {VIEWS};
 export class ShoreCamera{
  constructor(camera,element){
   this.camera=camera;this.el=element;this.keys=new Set();this.yaw=0;this.pitch=0;this.targetYaw=0;this.targetPitch=0;this.velocity=new THREE.Vector3();this.flySpeed=6;this.drag=false;this.cinematic=false;this.eye=3.4;this.view='ocean';this.tide=0;this.strength=1;this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.position=new THREE.Vector3();
-  this.setView('ocean',true);
+  this.setView('surf',true);
   element.addEventListener('pointerdown',e=>{element.focus({preventScroll:true});this.drag=true;this.last={x:e.clientX,y:e.clientY};element.setPointerCapture(e.pointerId);this.cinematic=false;this.transition=null;});
   element.addEventListener('pointermove',e=>{if(!this.drag)return;this.targetYaw-=(e.clientX-this.last.x)*.003;this.targetPitch-= (e.clientY-this.last.y)*.0027;this.targetPitch=clamp(this.targetPitch,-Math.PI/2+.01,Math.PI/2-.01);this.last={x:e.clientX,y:e.clientY};});
   element.addEventListener('contextmenu',e=>e.preventDefault());

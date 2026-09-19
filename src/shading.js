@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import {Fn,uniform,float,vec2,vec3,vec4,color,texture,attribute,shadow,positionWorld,positionLocal,normalWorld,normalView,normalLocal,cameraPosition,cameraViewMatrix,cameraProjectionMatrix,positionView,screenUV,cameraNear,cameraFar,perspectiveDepthToViewZ,viewportDepthTexture,viewportTexture,reflector,reflect,reflectVector,normalize,dot,mix,max,min,clamp,smoothstep,sin,cos,exp,pow,abs,length,fract,dFdx,dFdy,fwidth,cross,varying,bumpMap,If,Discard} from 'three/tsl';
-import {GRID,WAVES,ROCKS} from './coast.js?v=1.3.0';
+import {GRID,WAVES,ROCKS} from './coast.js?v=1.5.0';
 
 export function createShading(noiseTex,fields){
  const sunLight=new THREE.DirectionalLight('#fff0da',2.2);sunLight.castShadow=true;
@@ -92,16 +92,16 @@ export function createShading(noiseTex,fields){
  const middle=tri(.25).r;
  const meso=tri(.36).g;
  const grain=tri(1.5).g;
- const layer=sin(positionWorld.y.mul(15.5).add(positionWorld.x.mul(2)).add(positionWorld.z.mul(1.2)).add(middle.mul(6))).mul(.5).add(.5);
- const seams=pow(float(1).sub(abs(layer.sub(.48)).mul(2)),24).mul(smoothstep(.37,.60,middle));
+ // Irregular mineral patches instead of repeated horizontal contour bands.
+ const fractures=float(1).sub(smoothstep(.015,.08,abs(meso.sub(.5))));
  const rockIndex=uniform(0,'uint').onObjectUpdate(({object})=>object.userData.rockIndex??ROCKS.length);
  const rockWater=mix(fields.gpuRockState.element(rockIndex.mul(8).add(4)),fields.gpuRockState.element(rockIndex.mul(8).add(3)),U.alpha);
  const rockWet=float(1).sub(smoothstep(rockWater.sub(.02),rockWater.add(.18).add(meso.mul(.13)),positionWorld.y));
- const rockColor=mix(color('#515c61'),color('#948d7e'),stoneMacro.mul(.72).add(middle.mul(.28)));
+ const rockColor=mix(color('#444844'),color('#b8a17a'),stoneMacro.mul(.58).add(middle.mul(.42)));
  const mineral=smoothstep(.015,.002,abs(sin(positionWorld.x.mul(.93).sub(positionWorld.z.mul(.52)).add(positionWorld.y.mul(.7)).add(middle.mul(.56))))).mul(.06);
- rock.colorNode=rockColor.mul(mix(.76,1.15,middle)).mul(mix(.84,1.07,meso)).mul(mix(1,.86,seams)).mul(mix(.82,1.12,grain)).add(color('#bab6a6').mul(mineral)).mul(mix(1,.64,rockWet));
- rock.roughnessNode=mix(float(.88),float(.44),rockWet);
- rock.normalNode=bumpMap(middle.mul(.008).add(meso.mul(.004)).add(grain.mul(.001)),.4);
+ rock.colorNode=rockColor.mul(mix(.72,1.2,middle)).mul(mix(.78,1.1,meso)).mul(mix(1,.88,fractures)).mul(mix(.85,1.13,grain)).add(color('#c3b392').mul(mineral)).mul(mix(1,.53,rockWet));
+ rock.roughnessNode=mix(float(.91),float(.32),rockWet);
+ rock.normalNode=bumpMap(middle.mul(.028).add(meso.mul(.012)).add(grain.mul(.004)).sub(fractures.mul(.003)),.6);
  rock.envNode=sky(reflectVector,float(0)).mul(.17);
 
  const mirror=reflector({resolutionScale:.6,generateMipmaps:true,bounces:false,depth:true});
@@ -125,7 +125,10 @@ export function createShading(noiseTex,fields){
   If(st.y.lessThanEqual(0),()=>Discard());
   const distance=length(cameraPosition.sub(positionWorld));
   const hx=surfaceSlope.x,hz=surfaceSlope.y;
-  const micro=noise(mix(wp,surfaceMaterial.ba,.65).mul(.25).add(vec2(U.time.mul(.014),U.time.mul(-.007)))).ga.sub(.5).mul(.065).mul(float(1).sub(smoothstep(35,180,distance))).mul(smoothstep(.015,.20,depth));
+  const rippleUV=mix(wp,surfaceMaterial.ba,.55);
+  const coarse=noise(rippleUV.mul(.047).add(vec2(U.time.mul(.007),U.time.mul(-.003)))).rg.sub(.5);
+  const small=noise(rippleUV.mul(.18).add(coarse.mul(.10)).add(vec2(U.time.mul(-.011),U.time.mul(.006)))).ga.sub(.5);
+  const micro=coarse.mul(.25).add(small.mul(.12)).mul(float(1).sub(smoothstep(70,320,distance))).mul(smoothstep(.015,.3,depth));
   const normalFade=float(1).sub(smoothstep(90,950,distance));
   const rippleDamping=float(1).sub(st.z.mul(.55).clamp(0,.7));
   const normal=normalize(vec3(hx.negate().add(micro.x.mul(rippleDamping)).mul(normalFade),1,hz.negate().add(micro.y.mul(rippleDamping)).mul(normalFade))).toVar();
@@ -138,14 +141,19 @@ export function createShading(noiseTex,fields){
   const n0=noise(advected.mul(.075)).r;
   const n1=noise(advected.mul(.35).add(n0.mul(.37))).r;
   const n2=noise(advected.mul(1.35).add(n1.mul(.21))).g;
-  const density=st.z.mul(.88).add(st.w.mul(.35));
+  const density=st.z.mul(.8).add(st.w.mul(.5));
   const lace=n0.mul(.36).add(n1.mul(.42)).add(n2.mul(.22));
-  const threshold=float(.735).sub(density.mul(.34));
+  const threshold=float(.74).sub(density.mul(.19));
   const aa=max(.018,fwidth(lace).mul(.8));
   const coverage=smoothstep(threshold.sub(aa),threshold.add(aa),lace).mul(smoothstep(.025,.15,density));
   const fineEdge=noise(advected.mul(4.3)).a;
   const holes=smoothstep(.62,.77,n2).mul(float(1).sub(st.z.mul(.7)));
-  const foam=coverage.mul(U.foamShow).mul(float(1).sub(holes.mul(.9))).mul(mix(.83,1,fineEdge)).mul(smoothstep(.003,.025,depth)).toVar();
+  // Thin connected foam filaments remain behind a dense breaking crest.
+  const filamentWidth=float(.012).add(density.mul(.018));
+  const filaments=float(1).sub(smoothstep(filamentWidth,filamentWidth.add(.04),abs(n1.sub(.5))));
+  const foamPatches=smoothstep(.35,.62,n0.add(st.z.mul(.14)));
+  const laceCoverage=filaments.mul(smoothstep(.12,.7,density)).mul(.78).add(coverage.mul(smoothstep(.4,.85,st.z))).mul(foamPatches).clamp();
+  const foam=laceCoverage.mul(U.foamShow).mul(float(1).sub(holes.mul(.62))).mul(mix(.8,1,fineEdge)).mul(smoothstep(.003,.025,depth)).toVar();
   // Perspective-aware, depth-sensitive refraction; reject any distorted sample
   // whose depth belongs in front of the water (clean above-water silhouettes).
   const normalScreen=mainView.mul(vec4(normal,0)).xy;
@@ -156,8 +164,8 @@ export function createShading(noiseTex,fields){
   // Refraction samples level zero only; avoid building an unused mip chain.
   const refracted=viewportTexture(mix(screenUV,rUV,guard),float(0)).rgb;
   const opticalDepth=min(depth.div(max(.22,ndv)),20);
-  const transmission=exp(vec3(-.72,-.20,-.14).mul(opticalDepth));
-  const seaBase=mix(color('#286b76'),color('#103c54'),smoothstep(.4,4,depth));
+  const transmission=exp(vec3(-.86,-.28,-.18).mul(opticalDepth));
+  const seaBase=mix(color('#176376'),color('#073448'),smoothstep(.35,3.5,depth));
   const transmitted=refracted.mul(transmission).add(seaBase.mul(vec3(1).sub(transmission)));
   const distortion=normal.xz.mul(.014).div(max(1,distance.mul(.028))).mul(float(1).sub(foam.mul(.8)));
   // Project the displaced surface into the reflected camera. Plain screen UVs
@@ -195,5 +203,5 @@ export function createShading(noiseTex,fields){
   return vec4(result,smoothstep(0,.004,depth));
  });
  water.fragmentNode=waterColor();
- return {U,bindFields,updateCamera,sunLight,skyMaterial,sand,rock,water,mirror,sky,height,domain,field,fieldUV};
+ return {U,bindFields,updateCamera,sunLight,skyMaterial,sand,rock,water,mirror,sky,height,domain,field,fieldUV,noiseTex};
 }

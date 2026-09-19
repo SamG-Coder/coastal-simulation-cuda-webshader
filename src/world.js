@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
-import {axis,land} from './terrain-grid.js?v=1.3.0';
-import {terrainHeight,rockTop,ROCKS,shoreline,smooth,GRID} from './coast.js?v=1.3.0';
+import {axis,land} from './terrain-grid.js?v=1.5.0';
+import {terrainHeight,rockTop,ROCKS,shoreline,smooth,GRID} from './coast.js?v=1.5.0';
 export function gridGeometry(xs,zs,height){
  const nx=xs.length,nz=zs.length,positions=new Float32Array(nx*nz*3),indices=[];
  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
@@ -32,7 +32,7 @@ export function buildWorld(scene,shaders){
   const normals=g.attributes.normal,n=new THREE.Vector3(),broad=new THREE.Vector3();
   for(let j=0;j<R;j++)for(let i=0;i<=N;i++){
    const k=j*(N+1)+i,x=positions[k*3],z=positions[k*3+2],e=.055;
-   const blend=smooth(.94,.70,j/R);if(blend===0)continue;
+   const blend=smooth(.94,.70,j/R)*.55;if(blend===0)continue;
    const gx=(rockTop(x+e,z,r,0)-rockTop(x-e,z,r,0))/(2*e),gz=(rockTop(x,z+e,r,0)-rockTop(x,z-e,r,0))/(2*e);
    if(Math.abs(gx)+Math.abs(gz)>60)continue;
    broad.set(-gx,1,-gz).normalize();n.fromBufferAttribute(normals,k).lerp(broad,blend).normalize();normals.setXYZ(k,n.x,n.y,n.z);

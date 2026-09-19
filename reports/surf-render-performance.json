@@ -1,0 +1,130 @@
+{
+  "viewport": [
+    1440,
+    900
+  ],
+  "elapsed": 8.007,
+  "frames": 480,
+  "fps": 59.94754589733983,
+  "frameMeanMs": 16.666666666666664,
+  "frameP95Ms": 16.799999999999272,
+  "simulationRate": 0.999125764955607,
+  "start": {
+    "ready": true,
+    "revision": "185",
+    "backend": "WebGPU",
+    "solver": "CUDA WebShader / WebGPU",
+    "time": 37.999999999999886,
+    "paused": false,
+    "quality": "balanced",
+    "view": "surf",
+    "position": [
+      -3,
+      8.07374251631131,
+      -11
+    ],
+    "conditions": {
+      "strength": 1,
+      "wind": 0,
+      "tide": 0,
+      "lighting": "afternoon",
+      "clouds": 0.25
+    },
+    "renderTime": 37.98463333333322,
+    "alpha": 0.5390000000000179,
+    "sprayEmitted": 354,
+    "rockWetReach": 0.2320001870393753,
+    "simulationLag": 0,
+    "worker": {
+      "kernel": "CUDA WebShader / WebGPU",
+      "resident": true,
+      "submissionMeanMs": 0.12457627108541586,
+      "readbackMs": 0,
+      "packMs": 0,
+      "reconstructionMs": 0,
+      "debtMs": 1.3000000000003078,
+      "steps": 2281,
+      "stats": {
+        "pipelineCompiles": 21,
+        "pipelineCacheHits": 0,
+        "bindGroupsCreated": 22,
+        "submissions": 127,
+        "dispatches": 1460,
+        "uniformBytesUploaded": 343792,
+        "dataBytesUploaded": 7754208,
+        "readbackBytes": 96
+      }
+    },
+    "metrics": {
+      "maxH": 4.372007369995117,
+      "volume": 14367.1962890625,
+      "foam": 34112.875,
+      "wetCells": 79736,
+      "nonfinite": 0,
+      "sprayEmitted": 354,
+      "rockWetReach": 0.2320001870393753,
+      "time": 37
+    },
+    "errors": []
+  },
+  "end": {
+    "ready": true,
+    "revision": "185",
+    "backend": "WebGPU",
+    "solver": "CUDA WebShader / WebGPU",
+    "time": 45.99999999999943,
+    "paused": false,
+    "quality": "balanced",
+    "view": "surf",
+    "position": [
+      -3,
+      8.07374251631131,
+      -11
+    ],
+    "conditions": {
+      "strength": 1,
+      "wind": 0,
+      "tide": 0,
+      "lighting": "afternoon",
+      "clouds": 0.25
+    },
+    "renderTime": 45.984633333332766,
+    "alpha": 0.5390000000000179,
+    "sprayEmitted": 2375,
+    "rockWetReach": 0.24062615633010864,
+    "simulationLag": 0,
+    "worker": {
+      "kernel": "CUDA WebShader / WebGPU",
+      "resident": true,
+      "submissionMeanMs": 0.10752508354787543,
+      "readbackMs": 0,
+      "packMs": 0,
+      "reconstructionMs": 0,
+      "debtMs": 1.299999999999954,
+      "steps": 2761,
+      "stats": {
+        "pipelineCompiles": 21,
+        "pipelineCacheHits": 0,
+        "bindGroupsCreated": 22,
+        "submissions": 615,
+        "dispatches": 7236,
+        "uniformBytesUploaded": 1705328,
+        "dataBytesUploaded": 7754208,
+        "readbackBytes": 352
+      }
+    },
+    "metrics": {
+      "maxH": 4.594933032989502,
+      "volume": 14337.2470703125,
+      "foam": 34047.32421875,
+      "wetCells": 79691,
+      "nonfinite": 0,
+      "sprayEmitted": 2375,
+      "rockWetReach": 0.24062615633010864,
+      "time": 45.13333511352539
+    },
+    "errors": []
+  },
+  "mode": "GPU resident",
+  "note": "Exploratory browser-paced FPS; not completed-GPU throughput. See realism-performance.json for the controlled benchmark."
+}

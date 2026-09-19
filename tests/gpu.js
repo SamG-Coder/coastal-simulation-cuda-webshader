@@ -1,6 +1,6 @@
 import {ShoreSimulation} from './reference/simulation.js';
 import {CudaSolver} from '../src/cuda-solver.js';
-import {GRID} from '../src/coast.js';
+import {GRID,ROCKS} from '../src/coast.js';
 import {makeNoiseTexture} from './reference/noise.js';
 import {checkRealism} from './realism.js';
 const fields=['h','u','v','foam','old','wet','film','qx','qz'];
@@ -51,9 +51,37 @@ try{
   report.cases.push({name:'512 x 512 CUDA material noise',passed:maxChannelError<=1,maxChannelError});report.passed&&=maxChannelError<=1;
   initSolver.runtime.write(initSolver.Particles,new Float32Array([1,2,3,10,.5,.25,1,.5,.02,0,0,0]));
   const sprayBatch=initSolver.runtime.batch();initSolver.animateSpray(sprayBatch,10.2);sprayBatch.submit();
-  const spray=await initSolver.runtime.read(initSolver.Spray,Float32Array,32),expectedSpray=[1.05,2+.2-4.905*.2*.2,3.1,.68*.6,.02,.02*1.6,0,0];
+  const spray=await initSolver.runtime.read(initSolver.Spray,Float32Array,32),expectedSpray=[1.05,2+.2-4.905*.2*.2,3.1,.82*.6,.02,.02*1.7,0,0];
   const maxSprayError=Math.max(...spray.map((v,i)=>Math.abs(v-expectedSpray[i])));
   report.cases.push({name:'CUDA spray ballistic motion and fade',passed:maxSprayError<.00001,maxSprayError});report.passed&&=maxSprayError<.00001;
+  initSolver.runtime.write(initSolver.Particles,new Float32Array([1,2,3,10,1,.25,4,.5,.2,1,.4,0]));
+  const mistBatch=initSolver.runtime.batch();initSolver.animateSpray(mistBatch,10.2);mistBatch.submit();
+  const mist=await initSolver.runtime.read(initSolver.Spray,Float32Array,32),travel=(1-Math.exp(-.2*1.4))/1.4;
+  const expectedMist=[1+.25*travel,2+4*travel-2.2*.2*.2,3+.5*travel,.8*.46,.2*1.44,.2*1.44,1,.4];
+  const mistError=Math.max(...mist.map((v,i)=>Math.abs(v-expectedMist[i])));
+  report.cases.push({name:'CUDA expanding mist with drag',passed:mistError<.00001,mistError});report.passed&&=mistError<.00001;
+  // Synthetic rising incoming water: emission must be driven by the sampled
+  // impact, remain inside bounded rock rings, and contain all spray layers.
+  initSolver.runtime.write(initSolver.S,new Float32Array(initGpu.n).fill(-2),3*initGpu.n*4);
+  initSolver.runtime.write(initSolver.Eta,new Float32Array(initGpu.n).fill(.3));
+  const impact=initSolver.runtime.batch();
+  const impactValues={...GRID,time:1,step:60,rockCount:ROCKS.length,slots:initSolver.spraySlots};
+  initSolver.dispatch(impact,'rockSpray',impactValues,1);initSolver.animateSpray(impact,1.55);impact.submit();
+  const contacts=await initSolver.runtime.read(initSolver.RockState),particles=await initSolver.runtime.read(initSolver.Particles),vertices=await initSolver.runtime.read(initSolver.Spray);
+  let emitted=0,active=0,peak=0;const layers=[0,0,0];
+  for(let r=0;r<ROCKS.length;r++)emitted+=contacts[r*8+5];
+  for(let p=0;p<initSolver.particleCount;p++){
+   if(particles[p*12+3]>=1&&particles[p*12+3]<1.14)layers[particles[p*12+9]]++;
+   if(vertices[p*8+3]>0){active++;peak=Math.max(peak,vertices[p*8+1]);}
+  }
+  const bounded=ROCKS.every((_,r)=>contacts[r*8+6]>=0&&contacts[r*8+6]<initSolver.spraySlots);
+  const impactPassed=emitted>100&&active>100&&peak>2&&layers.every(n=>n>0)&&bounded&&vertices.every(Number.isFinite);
+  report.cases.push({name:'CUDA impact plumes and bounded particle rings',passed:impactPassed,emitted,active,peak,layers,bounded});report.passed&&=impactPassed;
+  initSolver.runtime.write(initSolver.S,new Float32Array(initGpu.n),3*initGpu.n*4);
+  const quiet=initSolver.runtime.batch();initSolver.dispatch(quiet,'rockSpray',{...impactValues,time:2,step:120},1);quiet.submit();
+  const quietContacts=await initSolver.runtime.read(initSolver.RockState);
+  const noQuietEmission=ROCKS.every((_,r)=>quietContacts[r*8+5]===contacts[r*8+5]);
+  report.cases.push({name:'Still water does not emit impact spray',passed:noQuietEmission});report.passed&&=noQuietEmission;
  }finally{initSolver.dispose();}
  await run('resting water / partial workgroup',{nx:17,nz:19,dx:.3,dz:.3,x0:0,z0:0},120,s=>{
   s.bed.fill(-1);s.h.fill(1);s.sponge.fill(0);s.foam.fill(0);s.old.fill(0);

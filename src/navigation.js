@@ -1,4 +1,4 @@
-import {ROCKS,rockLocal,collisionPosition} from './coast.js?v=1.3.0';
+import {ROCKS,rockLocal,collisionPosition} from './coast.js?v=1.5.0';
 
 export function isInterfaceEvent(event){
  return !!event.target?.closest?.('button,input,select,textarea,a,summary,[contenteditable],#interface,#touch-pad');

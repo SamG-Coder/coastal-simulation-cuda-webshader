@@ -6,7 +6,8 @@ This is a port of **[coastal-simulation](https://github.com/iamtechartist/coasta
 by **[iamtechartist](https://github.com/iamtechartist)** (Techartist).
 
 The original scene, coastal simulation equations, materials, procedural assets,
-and initial state come from that project. The starting upstream commit is
+and original initial state come from that project. The current port regenerates
+its initial state on CUDA for its revised rock geometry and waves. The starting upstream commit is
 [`2e95e1a3e757ca1268247417dee01606e5e3d55c`](https://github.com/iamtechartist/coastal-simulation/commit/2e95e1a3e757ca1268247417dee01606e5e3d55c).
 The original Git history and MIT license are retained. See [LICENSE](LICENSE).
 

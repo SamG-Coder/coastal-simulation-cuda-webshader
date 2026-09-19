@@ -32,16 +32,16 @@
       "passed": true,
       "depthUnchanged": true,
       "dryUnchanged": true,
-      "maxDisplacement": 0.06479144841432571,
-      "maxMotion": 0.09509354084730148
+      "maxDisplacement": 0.11601822078227997,
+      "maxMotion": 0.17380737513303757
     },
     {
       "name": "CUDA procedural initialization",
       "passed": true,
       "delta": {
-        "bed": 0.00015103816986083984,
+        "bed": 0.00007295608520507812,
         "sand": 0.0000017955899238586426,
-        "h": 0.00015103816986083984,
+        "h": 0.00007295608520507812,
         "u": 0,
         "v": 0,
         "foam": 0,
@@ -60,7 +60,29 @@
     {
       "name": "CUDA spray ballistic motion and fade",
       "passed": true,
-      "maxSprayError": 2.605915199183073e-7
+      "maxSprayError": 3.1161309266281023e-7
+    },
+    {
+      "name": "CUDA expanding mist with drag",
+      "passed": true,
+      "mistError": 4.5427410100273846e-7
+    },
+    {
+      "name": "CUDA impact plumes and bounded particle rings",
+      "passed": true,
+      "emitted": 1496,
+      "active": 1496,
+      "peak": 5.614584922790527,
+      "layers": [
+        748,
+        374,
+        374
+      ],
+      "bounded": true
+    },
+    {
+      "name": "Still water does not emit impact spray",
+      "passed": true
     },
     {
       "name": "resting water / partial workgroup",
@@ -91,7 +113,7 @@
       "volumeError": 0,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 14.099999999627471
+      "elapsedMs": 13.900000000372529
     },
     {
       "name": "closed domain water conservation",
@@ -122,7 +144,7 @@
       "volumeError": 3.1492687305857045e-8,
       "conservationError": 2.7912467566142967e-8,
       "errors": [],
-      "elapsedMs": 42.19999999925494
+      "elapsedMs": 37
     },
     {
       "name": "wet dry front, obstacles and controls",
@@ -135,25 +157,25 @@
       "finite": true,
       "positive": true,
       "delta": {
-        "h": 8.344650268554688e-7,
-        "u": 0.000003874301910400391,
-        "v": 0.0000023990869522094727,
-        "foam": 0.000004075467586517334,
-        "old": 0.0000020265579223632812,
+        "h": 9.834766387939453e-7,
+        "u": 0.0000045299530029296875,
+        "v": 0.0000025406479835510254,
+        "foam": 0.0000059604644775390625,
+        "old": 0.0000017285346984863281,
         "wet": 0.0000018477439880371094,
-        "film": 0.000003248453140258789,
-        "qx": 0.0000133514404296875,
-        "qz": 0.00001239776611328125
+        "film": 0.000003769993782043457,
+        "qx": 0.000011920928955078125,
+        "qz": 0.000027179718017578125
       },
       "packingErrors": {
         "surface": 1.4901161193847656e-8,
         "material": 0,
         "flow": 2.9802322387695312e-8
       },
-      "volumeError": 2.9830601616351476e-7,
+      "volumeError": 3.6239351720194383e-7,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 37.90000000037253
+      "elapsedMs": 32.19999999925494
     },
     {
       "name": "full grid baked shoreline",
@@ -166,25 +188,25 @@
       "finite": true,
       "positive": true,
       "delta": {
-        "h": 0.0000026226043701171875,
-        "u": 0.000005990266799926758,
-        "v": 0.000005945563316345215,
-        "foam": 0.000016033649444580078,
-        "old": 0.000036716461181640625,
-        "wet": 0.0000010132789611816406,
-        "film": 0.000005602836608886719,
-        "qx": 0.0001220703125,
+        "h": 0.00000286102294921875,
+        "u": 0.0000079423189163208,
+        "v": 0.000007838010787963867,
+        "foam": 0.00004780292510986328,
+        "old": 0.00004348158836364746,
+        "wet": 9.5367431640625e-7,
+        "film": 0.000006973743438720703,
+        "qx": 0.00013494491577148438,
         "qz": 0.0002593994140625
       },
       "packingErrors": {
-        "surface": 2.9802322387695312e-8,
+        "surface": 5.960464477539063e-8,
         "material": 0,
         "flow": 5.960464477539063e-8
       },
-      "volumeError": 2.1692809071220032e-9,
+      "volumeError": 2.510519905974128e-9,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 401.90000000037253
+      "elapsedMs": 379.5
     },
     {
       "name": "30 simulated seconds from cold start",
@@ -194,13 +216,13 @@
       "positive": true,
       "metrics": {
         "time": 29.999999999999577,
-        "maxH": 4.895544528961182,
-        "volume": 16551.420293779625,
-        "foam": 44536.053048541806,
-        "wetCells": 85655,
+        "maxH": 5.00541877746582,
+        "volume": 16709.047926362564,
+        "foam": 47209.62109580756,
+        "wetCells": 86605,
         "nonfinite": 0
       },
-      "volumeReductionError": 2.2469650262787773e-8
+      "volumeReductionError": 1.7085877356367354e-7
     }
   ],
   "adapter": {

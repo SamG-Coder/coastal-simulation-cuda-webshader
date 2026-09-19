@@ -1,5 +1,5 @@
 import {GpuRuntime} from '../vendor/cuda-webshader/runtime/runtime.js';
-import {ROCKS,WAVES} from './coast.js';
+import {ROCKS,WAVES} from './coast.js?v=1.5.0';
 
 export const FIELDS=['bed','sand','h','u','v','foam','old','wet','film','qx','qz','next','fluxX','fluxZ','limit','foamNext','oldNext','qxNext','qzNext'];
 export const ENTRIES=['advectMomentum','faces','limits','limitFlux','integrate','boundary','transport','commitTransport','initializeWaves','initializeState','initializeContacts','updateControls','prepareRows','reconstruct','surfaceDetail','packFields','rockSpray','sprayVertices','metricsPartials','metricsFinish','generateNoise'];
@@ -9,7 +9,7 @@ export class CudaSolver {
  static async create(sim,options={}){
   const {enhanced=true,...runtimeOptions}=options;
   const sources=await Promise.all(['coastal-kernels.cu','coastal-render.cu'].map(async name=>{
-   const response=await fetch(new URL(name,import.meta.url));
+   const response=await fetch(new URL(name+'?v=1.5.0',import.meta.url));
    if(!response.ok)throw new Error(`CUDA source: HTTP ${response.status}`);
    return response.text();
   }));
@@ -32,7 +32,7 @@ export class CudaSolver {
   const detail=Array.from({length:8},(_,i)=>{
    const wavelength=8.5*Math.pow(.79,i),angle=[.24,-.42,.67,-.16,.93,-.72,.38,-.95][i];
    const k=2*Math.PI/wavelength;
-   return [k*Math.cos(angle),k*Math.sin(angle),Math.sqrt(9.81*k),.026*Math.pow(.73,i)];
+   return [k*Math.cos(angle),k*Math.sin(angle),Math.sqrt(9.81*k),.043*Math.pow(.77,i)];
   });
   this.DetailW=runtime.createBuffer(new Float32Array(detail.flat()));
   const boundary=new Float32Array(n+8*nx+9*nz);if(sim.sponge)boundary.set(sim.sponge);
@@ -41,7 +41,7 @@ export class CudaSolver {
   this.Controls=runtime.createBuffer(new Float32Array([sim.state.strength,sim.state.wind,sim.state.tide]));
   this.R=runtime.createBuffer(new Float32Array(ROCKS.flatMap(r=>[r.x,r.z,r.rx,r.rz,r.h,r.seed,r.base,r.c,r.s,0])));
   this.RockState=runtime.createBuffer((ROCKS.length+1)*8*4);
-  this.particleCount=ROCKS.length*24;
+  this.spraySlots=384;this.particleCount=ROCKS.length*this.spraySlots;
   this.Particles=runtime.createBuffer(this.particleCount*12*4);
   this.Spray=runtime.createBuffer(this.particleCount*2*16);
   this.Eta=runtime.createBuffer(n*4);
@@ -78,7 +78,7 @@ export class CudaSolver {
   if(owned)batch.submit();
  }
  pack(batch,withSpray=true){
-  const s=this.sim,values={...s.g,pitch:this.pitch,time:s.time,strength:s.state.strength,rockCount:ROCKS.length,step:s.steps};
+  const s=this.sim,values={...s.g,pitch:this.pitch,time:s.time,strength:s.state.strength,rockCount:ROCKS.length,slots:this.spraySlots,step:s.steps,enhanced:Number(this.enhanced)};
   this.dispatch(batch,'reconstruct',values);
   if(this.enhanced)this.dispatch(batch,'surfaceDetail',values);
   this.dispatch(batch,'packFields',values);

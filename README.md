@@ -54,6 +54,15 @@ code lives only under `tests/reference/`, which is excluded from deployment.
   sharpens crests. Detail fades in shallow water, beneath foam, and at grid edges.
 - Water uses roughness-dependent GGX sun highlights with derivative filtering,
   brighter foam and stronger backlit crest colour.
+- Rocky surf uses stronger incoming swells and short-wave chop, with connected
+  foam filaments and clear-water gaps. Fractured rock geometry is mirrored in
+  the CUDA obstacle field, and wet surfaces darken around the waterline.
+- Impact-driven spray has 384 slots per rock (5,376 total), split into ballistic
+  droplets, dense spray fragments and expanding mist with drag. Launch strength
+  follows incoming speed and water rise; still water does not emit plumes.
+
+The opening **Rocky Surf** viewpoint looks out over the main rock group. The
+original viewpoints remain in the selector, and manual flight is unchanged.
 
 The main model remains a 2D shallow-water heightfield, not an overturning 3D
 fluid simulation. The short waves are rendering detail and do not add physical
@@ -108,11 +117,16 @@ continues GPU rasterization and material shading. This uses CUDA source compiled
 to WebGPU; it does not run native NVIDIA CUDA in the browser.
 
 Arithmetic uses f32 rather than the CPU solver's double intermediates. GPU rock
-initialization differed by at most 0.000152 m in the tested grid; material noise
+initialization differed by at most 0.000073 m in the tested grid; material noise
 differed by at most one 8-bit channel level. Spray uses deterministic per-rock
-seeds and 24 slots per rock (336 total), retaining the original emission criteria
-and motion equations while removing the global CPU particle ring. Individual
-particles are therefore not pixel-identical to the original random sequence.
+seeds and bounded rings. Its three particle layers, impact thresholds and launch
+speeds extend the original small droplet effect; they are visual effects rather
+than a 3D volume-conserving fluid solver.
+
+The bundled `initial-state.bin.gz` is now regenerated for the current fractured
+rocks and swell amplitudes with `node scripts/bake-state.mjs`. That development
+tool runs 36 seconds on the CUDA solver, checks stability, and exports the nine
+fields once. It is not deployed and does not introduce a runtime CPU fallback.
 
 The compiler/runtime source is vendored under `vendor/cuda-webshader` with its
 license and pinned provenance, so this repository can be served independently
@@ -147,15 +161,15 @@ Reports are in `reports/gpu-validation.json` and `reports/app-validation.json`.
 The application check also writes `reports/coastal-cuda.png` (not tracked).
 Tests were run on a hardware NVIDIA Blackwell adapter. In the full-grid
 60-step comparison using identical initial arrays, maximum depth error was
-approximately 2.7e-6 metres. GPU reconstruction/packing agreed with the CPU
+approximately 2.9e-6 metres. GPU reconstruction/packing agreed with the CPU
 implementation within 6e-8; the actual renderer textures matched CUDA output
 exactly. CPU and GPU initialization are tested separately.
 
 ## Performance
 
-The enhanced model averaged **3.164 ms** per completed update versus **3.133 ms**
-for the original GPU-resident model in three alternating-order rounds on this
-machine. The 0.031 ms difference is small compared with run-to-run variation;
+The current enhanced model averaged **3.219 ms** per completed update versus **3.140 ms**
+for reference physics on the same GPU-resident scene in three alternating-order rounds on this
+machine. The 0.079 ms difference is small compared with run-to-run variation;
 this is evidence of similar pipeline cost, not a guaranteed FPS improvement.
 Both paths perform two physics steps, reconstruction, spray and three texture
 copies with drawing paused. Neither transfers evolving fields to the CPU.

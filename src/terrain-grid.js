@@ -1,4 +1,4 @@
-import {terrainHeight,shoreline,smooth} from './coast.js?v=1.3.0';
+import {terrainHeight,shoreline,smooth} from './coast.js?v=1.5.0';
 export function axis(a,b,step,extent){
  const out=[];let v=a,d=step;
  while(v>-extent){v-=d;out.unshift(v);d*=1.14;}
