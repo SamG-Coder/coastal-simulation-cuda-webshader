@@ -1,0 +1,191 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "name": "CUDA procedural initialization",
+      "passed": true,
+      "delta": {
+        "bed": 0.00015103816986083984,
+        "sand": 0.0000017955899238586426,
+        "h": 0.00015103816986083984,
+        "u": 0,
+        "v": 0,
+        "foam": 0,
+        "old": 0,
+        "wet": 0.000004738569259643555,
+        "film": 0,
+        "qx": 0.00000762939453125,
+        "qz": 0.00000762939453125
+      }
+    },
+    {
+      "name": "512 x 512 CUDA material noise",
+      "passed": true,
+      "maxChannelError": 1
+    },
+    {
+      "name": "CUDA spray ballistic motion and fade",
+      "passed": true,
+      "maxSprayError": 2.605915199183073e-7
+    },
+    {
+      "name": "resting water / partial workgroup",
+      "grid": [
+        17,
+        19
+      ],
+      "steps": 120,
+      "passed": true,
+      "finite": true,
+      "positive": true,
+      "delta": {
+        "h": 0,
+        "u": 0,
+        "v": 0,
+        "foam": 0,
+        "old": 0,
+        "wet": 0,
+        "film": 0,
+        "qx": 0.000011920928955078125,
+        "qz": 0.000014781951904296875
+      },
+      "packingErrors": {
+        "surface": 0,
+        "material": 0,
+        "flow": 0
+      },
+      "volumeError": 0,
+      "conservationError": null,
+      "errors": [],
+      "elapsedMs": 19.40000000037253
+    },
+    {
+      "name": "closed domain water conservation",
+      "grid": [
+        31,
+        29
+      ],
+      "steps": 240,
+      "passed": true,
+      "finite": true,
+      "positive": true,
+      "delta": {
+        "h": 8.344650268554688e-7,
+        "u": 0.0000018104910850524902,
+        "v": 0.0000016838312149047852,
+        "foam": 0.000003291293978691101,
+        "old": 0.0000013955868780612946,
+        "wet": 0,
+        "film": 0,
+        "qx": 0.0000514984130859375,
+        "qz": 0.00001811981201171875
+      },
+      "packingErrors": {
+        "surface": 0,
+        "material": 0,
+        "flow": 1.4901161193847656e-8
+      },
+      "volumeError": 3.1492687305857045e-8,
+      "conservationError": 2.7912467566142967e-8,
+      "errors": [],
+      "elapsedMs": 33
+    },
+    {
+      "name": "wet dry front, obstacles and controls",
+      "grid": [
+        37,
+        43
+      ],
+      "steps": 120,
+      "passed": true,
+      "finite": true,
+      "positive": true,
+      "delta": {
+        "h": 8.344650268554688e-7,
+        "u": 0.000003874301910400391,
+        "v": 0.0000023990869522094727,
+        "foam": 0.000004075467586517334,
+        "old": 0.0000020265579223632812,
+        "wet": 0.0000018477439880371094,
+        "film": 0.000003248453140258789,
+        "qx": 0.0000133514404296875,
+        "qz": 0.00001239776611328125
+      },
+      "packingErrors": {
+        "surface": 1.4901161193847656e-8,
+        "material": 0,
+        "flow": 2.9802322387695312e-8
+      },
+      "volumeError": 2.9830601616351476e-7,
+      "conservationError": null,
+      "errors": [],
+      "elapsedMs": 33.80000000074506
+    },
+    {
+      "name": "full grid baked shoreline",
+      "grid": [
+        241,
+        401
+      ],
+      "steps": 60,
+      "passed": true,
+      "finite": true,
+      "positive": true,
+      "delta": {
+        "h": 0.0000026226043701171875,
+        "u": 0.000005990266799926758,
+        "v": 0.000005945563316345215,
+        "foam": 0.000016033649444580078,
+        "old": 0.000036716461181640625,
+        "wet": 0.0000010132789611816406,
+        "film": 0.000005602836608886719,
+        "qx": 0.0001220703125,
+        "qz": 0.0002593994140625
+      },
+      "packingErrors": {
+        "surface": 2.9802322387695312e-8,
+        "material": 0,
+        "flow": 5.960464477539063e-8
+      },
+      "volumeError": 2.1692809071220032e-9,
+      "conservationError": null,
+      "errors": [],
+      "elapsedMs": 372.69999999925494
+    },
+    {
+      "name": "30 simulated seconds from cold start",
+      "steps": 1800,
+      "passed": true,
+      "finite": true,
+      "positive": true,
+      "metrics": {
+        "time": 29.999999999999577,
+        "maxH": 4.896744251251221,
+        "volume": 16712.80587811062,
+        "foam": 33648.45276985972,
+        "wetCells": 88250,
+        "nonfinite": 0
+      },
+      "volumeReductionError": 3.0496737988851435e-7
+    }
+  ],
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "blackwell",
+    "device": "",
+    "description": "",
+    "features": [
+      "core-features-and-limits",
+      "subgroup-size-control",
+      "float32-filterable",
+      "timestamp-query",
+      "subgroups"
+    ],
+    "timestampQuery": true,
+    "limits": {
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupStorageSize": 16384,
+      "maxStorageBufferBindingSize": 268435456
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "passed": true,
+  "initial": {
+    "ready": true,
+    "revision": "185",
+    "backend": "WebGPU",
+    "solver": "CUDA WebShader / WebGPU",
+    "time": 39.03333333333316,
+    "paused": false,
+    "quality": "balanced",
+    "view": "ocean",
+    "position": [
+      18,
+      3.3,
+      -32.5
+    ],
+    "conditions": {
+      "strength": 1,
+      "wind": 0,
+      "tide": 0,
+      "lighting": "afternoon",
+      "clouds": 0.25
+    },
+    "renderTime": 39.00316666666575,
+    "alpha": 0.09499999997757953,
+    "sprayEmitted": 26,
+    "rockWetReach": 0.21600057184696198,
+    "simulationLag": 0,
+    "worker": {
+      "kernel": "CUDA WebShader / WebGPU",
+      "resident": true,
+      "submissionMeanMs": 0.06774941986975565,
+      "readbackMs": 0,
+      "packMs": 0,
+      "reconstructionMs": 0,
+      "debtMs": 3.166666665921778,
+      "steps": 2342,
+      "stats": {
+        "pipelineCompiles": 19,
+        "pipelineCacheHits": 0,
+        "bindGroupsCreated": 20,
+        "submissions": 442,
+        "dispatches": 2177,
+        "uniformBytesUploaded": 451744,
+        "dataBytesUploaded": 7754080,
+        "readbackBytes": 160
+      }
+    },
+    "metrics": {
+      "maxH": 4.549374103546143,
+      "volume": 14292.5986328125,
+      "foam": 17709.88671875,
+      "wetCells": 80639,
+      "nonfinite": 0,
+      "sprayEmitted": 26,
+      "rockWetReach": 0.21600057184696198,
+      "time": 39.016666412353516
+    },
+    "errors": []
+  },
+  "pauseStable": true,
+  "noFieldUploads": true,
+  "cachedBindings": true,
+  "textureCopies": {
+    "maxError": 0,
+    "passed": true
+  },
+  "resumed": {
+    "ready": true,
+    "revision": "185",
+    "backend": "WebGPU",
+    "solver": "CUDA WebShader / WebGPU",
+    "time": 39.69999999999979,
+    "paused": false,
+    "quality": "balanced",
+    "view": "ocean",
+    "position": [
+      18,
+      3.3174429547144353,
+      -32.5
+    ],
+    "conditions": {
+      "strength": 1.117332848162554,
+      "wind": 2.815988355901306,
+      "tide": 0.03519985444876632,
+      "lighting": "afternoon",
+      "clouds": 0.25
+    },
+    "renderTime": 39.667366666665714,
+    "alpha": 0.020999999977676737,
+    "sprayEmitted": 29,
+    "rockWetReach": 0.21280063688755035,
+    "simulationLag": 0,
+    "worker": {
+      "kernel": "CUDA WebShader / WebGPU",
+      "resident": true,
+      "submissionMeanMs": 0.06571428566106728,
+      "readbackMs": 0,
+      "packMs": 0,
+      "reconstructionMs": 0,
+      "debtMs": 0.6999999992548904,
+      "steps": 2382,
+      "stats": {
+        "pipelineCompiles": 19,
+        "pipelineCacheHits": 0,
+        "bindGroupsCreated": 20,
+        "submissions": 537,
+        "dispatches": 2653,
+        "uniformBytesUploaded": 550800,
+        "dataBytesUploaded": 7754080,
+        "readbackBytes": 4927680
+      }
+    },
+    "metrics": {
+      "maxH": 4.563903331756592,
+      "volume": 14289.2958984375,
+      "foam": 17825,
+      "wetCells": 80643,
+      "nonfinite": 0,
+      "sprayEmitted": 29,
+      "rockWetReach": 0.21280063688755035,
+      "time": 39.400001525878906
+    },
+    "errors": []
+  },
+  "errors": [],
+  "cpuFallback": {
+    "ready": true,
+    "solver": "WebAssembly",
+    "backend": "WebGL2"
+  },
+  "cudaFailure": {
+    "message": "CUDA source: HTTP 503",
+    "fallback": "?solver=cpu&webgl=1"
+  },
+  "coldStart": {
+    "ready": true,
+    "time": 35.99999999999924,
+    "metrics": {
+      "maxH": 4.43477201461792,
+      "volume": 14348.9296875,
+      "foam": 18183.494140625,
+      "wetCells": 80326,
+      "nonfinite": 0,
+      "sprayEmitted": 0,
+      "rockWetReach": 0.23999999463558197,
+      "time": 36
+    },
+    "error": ""
+  }
+}

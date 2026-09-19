@@ -1,0 +1,15 @@
+{
+  "name": "coastal-simulation-cuda-webshader",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/check-kernels.mjs",
+    "test:gpu": "node scripts/test-gpu.mjs",
+    "test:app": "node scripts/test-app.mjs",
+    "bench": "node scripts/bench-pipeline.mjs",
+    "bench:app": "node scripts/bench-app.mjs"
+  },
+  "devDependencies": {"playwright": "1.56.1"}
+}

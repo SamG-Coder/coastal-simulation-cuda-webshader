@@ -37,7 +37,7 @@ export function buildWorld(scene,shaders){
    if(Math.abs(gx)+Math.abs(gz)>60)continue;
    broad.set(-gx,1,-gz).normalize();n.fromBufferAttribute(normals,k).lerp(broad,blend).normalize();normals.setXYZ(k,n.x,n.y,n.z);
   }
-  const m=new THREE.Mesh(g,shaders.rock);m.castShadow=m.receiveShadow=true;m.userData.rock=r;m.userData.wetReach=.24;scene.add(m);rocks.push(m);
+  const m=new THREE.Mesh(g,shaders.rock);m.castShadow=m.receiveShadow=true;m.userData.rock=r;m.userData.rockIndex=rocks.length;m.userData.wetReach=.24;scene.add(m);rocks.push(m);
  }
  const waterGeometry=gridGeometry(axis(GRID.x0,58,GRID.dx,2600),axis(GRID.z0,28,GRID.dz,2600),()=>0);
  const positions=waterGeometry.attributes.position,bed=new Float32Array(positions.count);

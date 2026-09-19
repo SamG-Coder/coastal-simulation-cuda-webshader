@@ -6,11 +6,13 @@ import {GRID, bedHeight, terrainHeight, WAVES, clamp, smooth} from './coast.js?v
 // volume limiter keeps cells positive at moving wet/dry boundaries. Persistent
 // foam and material coordinates follow the same velocity field.
 export class ShoreSimulation {
- constructor(config=GRID) {
+ constructor(config=GRID,{initialize=true}={}) {
   this.g=config; const {nx,nz,dx,dz,x0,z0}=config; const n=nx*nz;
   this.n=n;this.time=0;this.steps=0;
   this.state={strength:1,wind:0,tide:0};this.target={...this.state};
   for(const name of ['bed','sand','h','next','u','v','fluxX','fluxZ','limit','foam','old','foamNext','oldNext','wet','film','qx','qz','qxNext','qzNext'])this[name]=new Float32Array(n);
+  // CUDA initializes procedural grid data without running the CPU cell loops.
+  if(!initialize){this.sponge=new Float32Array(n);return;}
   for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
    const k=j*nx+i,x=x0+i*dx,z=z0+j*dz;
    this.bed[k]=bedHeight(x,z);this.sand[k]=terrainHeight(x,z);

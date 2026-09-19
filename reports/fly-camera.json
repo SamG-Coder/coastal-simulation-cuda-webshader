@@ -1,0 +1,13 @@
+{
+  "ascended": 1.5936000000000021,
+  "altitudeDrift": 0,
+  "descendedBelowGround": true,
+  "belowGroundY": -6.307199999999991,
+  "belowGroundDrift": 0,
+  "pitchedForwardRise": 0.6228706361817711,
+  "forwardAlignment": 1,
+  "releaseDrift": 0,
+  "fpsVisible": true,
+  "errors": [],
+  "passed": true
+}

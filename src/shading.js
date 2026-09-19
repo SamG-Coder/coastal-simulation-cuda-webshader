@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import {Fn,uniform,float,vec2,vec3,vec4,color,texture,attribute,shadow,positionWorld,positionLocal,normalWorld,normalView,normalLocal,cameraPosition,cameraViewMatrix,cameraProjectionMatrix,positionView,screenUV,cameraNear,cameraFar,perspectiveDepthToViewZ,viewportDepthTexture,viewportTexture,reflector,reflect,reflectVector,normalize,dot,mix,max,min,clamp,smoothstep,sin,cos,exp,pow,abs,length,fract,dFdx,dFdy,fwidth,cross,varying,bumpMap,If,Discard} from 'three/tsl';
-import {GRID,WAVES} from './coast.js?v=1.3.0';
+import {GRID,WAVES,ROCKS} from './coast.js?v=1.3.0';
 
 export function createShading(noiseTex,fields){
  const sunLight=new THREE.DirectionalLight('#fff0da',2.2);sunLight.castShadow=true;
@@ -92,7 +92,8 @@ export function createShading(noiseTex,fields){
  const grain=tri(1.5).g;
  const layer=sin(positionWorld.y.mul(15.5).add(positionWorld.x.mul(2)).add(positionWorld.z.mul(1.2)).add(middle.mul(6))).mul(.5).add(.5);
  const seams=pow(float(1).sub(abs(layer.sub(.48)).mul(2)),24).mul(smoothstep(.37,.60,middle));
- const rockWater=uniform(.24).onObjectUpdate(({object})=>object.userData.renderWetReach??.20);
+ const rockIndex=uniform(0,'uint').onObjectUpdate(({object})=>object.userData.rockIndex??ROCKS.length);
+ const rockWater=fields.gpuRockState?mix(fields.gpuRockState.element(rockIndex.mul(8).add(4)),fields.gpuRockState.element(rockIndex.mul(8).add(3)),U.alpha):uniform(.24).onObjectUpdate(({object})=>object.userData.renderWetReach??.20);
  const rockWet=float(1).sub(smoothstep(rockWater.sub(.02),rockWater.add(.18).add(meso.mul(.13)),positionWorld.y));
  const rockColor=mix(color('#515c61'),color('#948d7e'),stoneMacro.mul(.72).add(middle.mul(.28)));
  const mineral=smoothstep(.015,.002,abs(sin(positionWorld.x.mul(.93).sub(positionWorld.z.mul(.52)).add(positionWorld.y.mul(.7)).add(middle.mul(.56))))).mul(.06);

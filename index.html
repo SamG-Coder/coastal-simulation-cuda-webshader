@@ -2,9 +2,10 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#18333b"><meta name="description" content="Explore a procedurally formed coastline with incoming swells, flowing whitewater and a living shoreline."><title>Saltreach — Coastal water</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2318333b'/%3E%3Cpath d='M5 12q5-7 11 0t11 0M5 19q5-7 11 0t11 0' fill='none' stroke='%23d7e6df' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="./style.css"><script type="importmap">{"imports":{"three":"./vendor/three.webgpu.js","three/webgpu":"./vendor/three.webgpu.js","three/tsl":"./vendor/three.tsl.js","three/addons/":"./vendor/addons/"}}</script></head>
-<body><main id="viewport" aria-label="Interactive shoreline. Drag to look around. Use W A S D or arrow keys to walk."></main>
+<body><main id="viewport" aria-label="Interactive shoreline. Drag to look, W A S D to fly, Q and E to descend and ascend, Shift to fly faster."></main>
+<div id="fps-counter" aria-label="Rendering performance" aria-live="off"><strong id="fps-value">— FPS</strong><span id="frame-time">— ms / frame</span></div>
 <div id="loading" class="status-card"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M2 7q9-10 18 0t18 0M2 17q9-10 18 0t18 0"/></svg><span id="loading-text">Forming the shoreline</span><div class="progress"><i id="progress"></i></div></div>
-<div id="error" class="status-card" hidden><strong>Unable to render this shoreline</strong><p id="error-text"></p><a href="?webgl=1">Try WebGL 2</a><details><summary>Technical details</summary><pre id="error-detail"></pre></details></div>
+<div id="error" class="status-card" hidden><strong>Unable to render this shoreline</strong><p id="error-text"></p><a href="?solver=cpu&webgl=1">Try compatibility mode</a><details><summary>Technical details</summary><pre id="error-detail"></pre></details></div>
 <section id="interface" aria-label="Shoreline controls">
  <div id="settings" class="panel" hidden>
   <div class="panel-header"><span>Conditions</span><button id="close-settings" aria-label="Close conditions">×</button></div>
@@ -15,7 +16,7 @@
   <div class="select-row"><label for="lighting">Light</label><select id="lighting"><option value="afternoon">Late afternoon</option><option value="daylight">Daylight</option><option value="overcast">Soft overcast</option></select></div>
   <div class="select-row"><label for="quality">Quality</label><select id="quality"><option value="balanced">Balanced</option><option value="high">High</option><option value="low">Economy</option></select></div>
  </div>
- <div id="help" class="panel help-panel" hidden><div class="panel-header"><span>Explore the shore</span><button id="close-help" aria-label="Close help">×</button></div><p>Drag to look. <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrow keys to walk. Scroll to move forward or back.</p><p><kbd>Space</kbd> pause · <kbd>C</kbd> viewpoint · <kbd>H</kbd> interface</p><p>On touch screens, drag to look and use the movement pad.</p></div>
+ <div id="help" class="panel help-panel" hidden><div class="panel-header"><span>Fly around the shore</span><button id="close-help" aria-label="Close help">×</button></div><p>Drag with either mouse button to look. <kbd>W</kbd> / <kbd>S</kbd> fly forward and back in the direction you face; <kbd>A</kbd> / <kbd>D</kbd> strafe. Arrow keys also work.</p><p><kbd>E</kbd> ascend · <kbd>Q</kbd> descend · <kbd>Shift</kbd> fly faster (24 m/s instead of 6 m/s). Scroll to move along your view.</p><p>Free flight has no terrain collision or automatic height adjustment.</p><p><kbd>Space</kbd> pause water · <kbd>C</kbd> viewpoint · <kbd>H</kbd> interface</p><p>On touch screens, drag to look and use the movement pad, including Up and Down.</p><p class="credits">CUDA WebShader port of <a href="https://github.com/iamtechartist/coastal-simulation" target="_blank" rel="noopener noreferrer">coastal-simulation by iamtechartist</a>. <a href="https://github.com/SamG-Coder/coastal-simulation-cuda-webshader" target="_blank" rel="noopener noreferrer">Port source and credits</a>.</p></div>
  <div class="dock">
  <div class="dock-primary">
   <button id="pause" class="icon-button" aria-label="Pause simulation" title="Pause · Space"><svg id="pause-icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
@@ -33,5 +34,5 @@
  </div></div>
 </section>
 <button id="restore-ui" class="restore" aria-label="Show interface" title="Show interface · H" hidden><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg></button>
-<div id="touch-pad" aria-label="Movement controls"><button data-move="forward" aria-label="Move forward">↑</button><button data-move="left" aria-label="Move left">←</button><button data-move="back" aria-label="Move backward">↓</button><button data-move="right" aria-label="Move right">→</button></div>
+<div id="touch-pad" aria-label="Flight controls"><button data-move="forward" aria-label="Fly forward">↑</button><button data-move="left" aria-label="Fly left">←</button><button data-move="back" aria-label="Fly backward">↓</button><button data-move="right" aria-label="Fly right">→</button><button data-move="up" aria-label="Ascend">Up</button><button data-move="down" aria-label="Descend">Down</button></div>
 <script type="module" src="./src/main.js?v=1.3.0"></script></body></html>
