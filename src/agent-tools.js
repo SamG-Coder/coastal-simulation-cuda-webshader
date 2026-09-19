@@ -1,4 +1,4 @@
-import {VIEWS} from './views.js?v=1.5.0';
+import {VIEWS} from './views.js?v=1.5.1';
 export function registerAgentTools(api){
  const context=document.modelContext;if(!context?.registerTool)return;
  const abort=new AbortController();window.addEventListener('pagehide',()=>abort.abort(),{once:true});

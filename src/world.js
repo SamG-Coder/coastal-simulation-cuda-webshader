@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
-import {axis,land} from './terrain-grid.js?v=1.5.0';
-import {terrainHeight,rockTop,ROCKS,shoreline,smooth,GRID} from './coast.js?v=1.5.0';
+import {axis,land} from './terrain-grid.js?v=1.5.1';
+import {terrainHeight,rockTop,ROCKS,shoreline,smooth,GRID} from './coast.js?v=1.5.1';
 export function gridGeometry(xs,zs,height){
  const nx=xs.length,nz=zs.length,positions=new Float32Array(nx*nz*3),indices=[];
  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){

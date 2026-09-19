@@ -17,6 +17,25 @@ export async function checkRealism(report){
   const aux=await gpu.runtime.read(gpu.Aux),maxTurbulence=Math.max(...aux.subarray(s.n*2,s.n*3));
   return {passed:maxDrift<1e-6&&maxTurbulence===0,maxDrift,maxTurbulence};
  });
+ await check('rock contact: hidden surface stays at water level across dry cliffs and films',s=>{
+  for(let j=13;j<=25;j++)for(let i=15;i<=25;i++){
+   const k=j*g.nx+i;s.bed[k]=3+.2*Math.sin(i);s.h[k]=(i+j)%2?.015:0;
+  }
+  const submerged=5*g.nx+5;s.bed[submerged]=-.5;s.h[submerged]=.65;
+ },async(s,gpu)=>{
+  const initialDepth=s.h.slice(),batch=gpu.runtime.batch();
+  gpu.dispatch(batch,'reconstruct',{...g,enhanced:1});
+  gpu.dispatch(batch,'packFields',{...g,pitch:gpu.pitch,enhanced:1});batch.submit();
+  const eta=await gpu.runtime.read(gpu.Eta),packed=await gpu.runtime.read(gpu.Out);await gpu.sync();
+  let maxCliffSurfaceHeight=0,minRenderDepth=Infinity;
+  for(let j=13;j<=25;j++)for(let i=15;i<=25;i++){
+   maxCliffSurfaceHeight=Math.max(maxCliffSurfaceHeight,Math.abs(eta[j*g.nx+i]));
+   minRenderDepth=Math.min(minRenderDepth,packed[(j*gpu.pitch+i)*4+1]);
+  }
+  const depthUnchanged=s.h.every((h,k)=>h===initialDepth[k]);
+  const submergedError=Math.abs(eta[5*g.nx+5]-.15);
+  return {passed:maxCliffSurfaceHeight<1e-6&&minRenderDepth>.9&&depthUnchanged&&submergedError<1e-6,maxCliffSurfaceHeight,minRenderDepth,depthUnchanged,submergedError};
+ });
  await check('enhanced: closed-domain volume',s=>{
   for(let j=0;j<g.nz;j++)for(let i=0;i<g.nx;i++)s.h[j*g.nx+i]=1+.2*Math.exp(-((i-18)**2+(j-20)**2)/35);
  },async(s,gpu)=>{

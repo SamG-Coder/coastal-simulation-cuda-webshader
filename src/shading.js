@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import {Fn,uniform,float,vec2,vec3,vec4,color,texture,attribute,shadow,positionWorld,positionLocal,normalWorld,normalView,normalLocal,cameraPosition,cameraViewMatrix,cameraProjectionMatrix,positionView,screenUV,cameraNear,cameraFar,perspectiveDepthToViewZ,viewportDepthTexture,viewportTexture,reflector,reflect,reflectVector,normalize,dot,mix,max,min,clamp,smoothstep,sin,cos,exp,pow,abs,length,fract,dFdx,dFdy,fwidth,cross,varying,bumpMap,If,Discard} from 'three/tsl';
-import {GRID,WAVES,ROCKS} from './coast.js?v=1.5.0';
+import {GRID,WAVES,ROCKS} from './coast.js?v=1.5.1';
 
 export function createShading(noiseTex,fields){
  const sunLight=new THREE.DirectionalLight('#fff0da',2.2);sunLight.castShadow=true;

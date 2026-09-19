@@ -22,9 +22,29 @@ __global__ void prepareRows(float *B,const float *W,const float *Controls,int nx
  }
  B[n+8*nx+8*nz+j]=strength*(.79f+.16f*sinf(time*.071f+z*.018f)+.10f*sinf(time*.117f-z*.031f));
 }
-__global__ void reconstruct(const float *S,float *Eta,int nx,int nz){
+__global__ void reconstruct(const float *S,const float *Controls,float *Eta,int nx,int nz,int enhanced){
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
  int i=k%nx,j=k/nx;const float *bed=S;const float *h=S+2*n;
+ if(enhanced!=0&&bed[k]-S[n+k]>.08f){
+  // Extend the surrounding free surface THROUGH solid rocks. Lifting hidden
+  // water vertices to a dry obstacle's bed creates tall triangles outside its
+  // silhouette. The actual rock mesh/depth buffer provides the intersection.
+  float level=Controls[2];bool found=false;
+  for(int radius=1;radius<=24;radius++){
+   float total=0.0f,weight=0.0f;
+   for(int direction=0;direction<8;direction++){
+    int di=direction==0||direction==4||direction==6?-radius:direction==1||direction==5||direction==7?radius:0;
+    int dj=direction==2||direction==4||direction==5?-radius:direction==3||direction==6||direction==7?radius:0;
+    int ii=i+di,jj=j+dj;if(ii<0||ii>=nx||jj<0||jj>=nz)continue;
+    int q=jj*nx+ii;if(h[q]<.025f||bed[q]-S[n+q]>.08f)continue;
+    float w=direction<4?1.0f:.70710678f;total+=(bed[q]+h[q])*w;weight+=w;
+   }
+   if(weight>0.0f){level=total/weight;found=true;break;}
+  }
+  // Preserve the simulated surface over genuinely submerged obstacles.
+  Eta[k]=found&&h[k]>.1f&&bed[k]+.025f<level?bed[k]+h[k]:level;
+  return;
+ }
  float raw=bed[k]+h[k];if(h[k]>=.0005f){Eta[k]=raw;return;}
  float level=bed[k]-.025f,best=1e30f;bool found=false;
  for(int axis=0;axis<4;axis++){
@@ -58,10 +78,10 @@ __global__ void packFields(const float *S,const float *Eta,float4 *Out,int nx,in
  int k=blockIdx.x*blockDim.x+threadIdx.x,n=nx*nz;if(k>=n)return;
  int i=k%nx,j=k/nx,q=j*pitch+i,size=pitch*nz;
  const float *bed=S;const float *h=S+2*n;float e=Eta[k];
- // A dry cliff vertex must clip the water triangle, not stretch a nearly-zero
- // signed depth up the rock wall into a thin turquoise spike.
+ // Rock silhouettes are resolved by raster depth, not a coarse grid cutout.
+ // Sand still uses signed depth for a continuous wet/dry beach boundary.
  float visibleDepth=e-bed[k];
- if(enhanced!=0&&h[k]<.025f&&bed[k]-S[n+k]>.08f)visibleDepth=fminf(visibleDepth,-3.0f);
+ if(enhanced!=0&&bed[k]-S[n+k]>.08f)visibleDepth=e-S[n+k];
  Out[q]=make_float4(e,visibleDepth,S[5*n+k],S[6*n+k]);
  Out[size+q]=make_float4(S[7*n+k],S[8*n+k],S[9*n+k],S[10*n+k]);
  bool l=i>0&&h[k-1]>=.0005f&&fminf(e,Eta[k-1])>fmaxf(bed[k],bed[k-1]);

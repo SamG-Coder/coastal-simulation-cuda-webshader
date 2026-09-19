@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
-import {terrainHeight,clamp} from './coast.js?v=1.5.0';
-import {isInterfaceEvent,routeBetween,prepareRoute,pointOnRoute} from './navigation.js?v=1.5.0';
-import {VIEWS} from './views.js?v=1.5.0';
+import {terrainHeight,clamp} from './coast.js?v=1.5.1';
+import {isInterfaceEvent,routeBetween,prepareRoute,pointOnRoute} from './navigation.js?v=1.5.1';
+import {VIEWS} from './views.js?v=1.5.1';
 export {VIEWS};
 export class ShoreCamera{
  constructor(camera,element){

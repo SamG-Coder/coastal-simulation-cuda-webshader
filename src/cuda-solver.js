@@ -1,5 +1,5 @@
 import {GpuRuntime} from '../vendor/cuda-webshader/runtime/runtime.js';
-import {ROCKS,WAVES} from './coast.js?v=1.5.0';
+import {ROCKS,WAVES} from './coast.js?v=1.5.1';
 
 export const FIELDS=['bed','sand','h','u','v','foam','old','wet','film','qx','qz','next','fluxX','fluxZ','limit','foamNext','oldNext','qxNext','qzNext'];
 export const ENTRIES=['advectMomentum','faces','limits','limitFlux','integrate','boundary','transport','commitTransport','initializeWaves','initializeState','initializeContacts','updateControls','prepareRows','reconstruct','surfaceDetail','packFields','rockSpray','sprayVertices','metricsPartials','metricsFinish','generateNoise'];
@@ -9,7 +9,7 @@ export class CudaSolver {
  static async create(sim,options={}){
   const {enhanced=true,...runtimeOptions}=options;
   const sources=await Promise.all(['coastal-kernels.cu','coastal-render.cu'].map(async name=>{
-   const response=await fetch(new URL(name+'?v=1.5.0',import.meta.url));
+   const response=await fetch(new URL(name+'?v=1.5.1',import.meta.url));
    if(!response.ok)throw new Error(`CUDA source: HTTP ${response.status}`);
    return response.text();
   }));

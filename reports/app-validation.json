@@ -21,19 +21,19 @@
       "lighting": "afternoon",
       "clouds": 0.25
     },
-    "renderTime": 39.011199999999455,
-    "alpha": 0.33599999998879104,
+    "renderTime": 39.006699999999086,
+    "alpha": 0.2009999999776938,
     "sprayEmitted": 661,
-    "rockWetReach": 0.22373372316360474,
+    "rockWetReach": 0.22400037944316864,
     "simulationLag": 0,
     "worker": {
       "kernel": "CUDA WebShader / WebGPU",
       "resident": true,
-      "submissionMeanMs": 0.13407821221766192,
+      "submissionMeanMs": 0.16815642461014194,
       "readbackMs": 0,
       "packMs": 0,
       "reconstructionMs": 0,
-      "debtMs": 11.199999999628043,
+      "debtMs": 6.699999999255145,
       "steps": 2342,
       "stats": {
         "pipelineCompiles": 21,
@@ -47,14 +47,14 @@
       }
     },
     "metrics": {
-      "maxH": 4.517172813415527,
-      "volume": 14336.109375,
-      "foam": 33467.29296875,
-      "wetCells": 79845,
+      "maxH": 4.5142621994018555,
+      "volume": 14336.962890625,
+      "foam": 33475.6953125,
+      "wetCells": 79843,
       "nonfinite": 0,
       "sprayEmitted": 661,
-      "rockWetReach": 0.22373372316360474,
-      "time": 38.03333282470703
+      "rockWetReach": 0.22400037944316864,
+      "time": 38.016666412353516
     },
     "errors": []
   },
@@ -80,25 +80,25 @@
       -11
     ],
     "conditions": {
-      "strength": 1.1232356589835888,
-      "wind": 2.957655815606144,
-      "tide": 0.0369706976950768,
+      "strength": 1.1222596502203994,
+      "wind": 2.9342316052895994,
+      "tide": 0.036677895066119987,
       "lighting": "afternoon",
       "clouds": 0.25
     },
-    "renderTime": 39.77890000000016,
-    "alpha": 0.3670000000111382,
+    "renderTime": 39.77419999999904,
+    "alpha": 0.22599999997767248,
     "sprayEmitted": 953,
     "rockWetReach": 0.21280063688755035,
     "simulationLag": 0,
     "worker": {
       "kernel": "CUDA WebShader / WebGPU",
       "resident": true,
-      "submissionMeanMs": 0.1318584070005248,
+      "submissionMeanMs": 0.16150442478700286,
       "readbackMs": 0,
       "packMs": 0,
       "reconstructionMs": 0,
-      "debtMs": 12.233333333706124,
+      "debtMs": 7.5333333325885325,
       "steps": 2388,
       "stats": {
         "pipelineCompiles": 21,
@@ -112,14 +112,14 @@
       }
     },
     "metrics": {
-      "maxH": 4.62656307220459,
-      "volume": 14274.4658203125,
+      "maxH": 4.625014305114746,
+      "volume": 14274.19140625,
       "foam": 33592.18359375,
       "wetCells": 80055,
       "nonfinite": 0,
       "sprayEmitted": 953,
       "rockWetReach": 0.21280063688755035,
-      "time": 39.41666793823242
+      "time": 39.400001525878906
     },
     "errors": []
   },

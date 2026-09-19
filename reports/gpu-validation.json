@@ -8,6 +8,14 @@
       "maxTurbulence": 0
     },
     {
+      "name": "rock contact: hidden surface stays at water level across dry cliffs and films",
+      "passed": true,
+      "maxCliffSurfaceHeight": 0,
+      "minRenderDepth": 1,
+      "depthUnchanged": true,
+      "submergedError": 2.3841857904605135e-8
+    },
+    {
       "name": "enhanced: closed-domain volume",
       "passed": true,
       "relativeVolumeError": 1.1693015345794551e-8,
@@ -113,7 +121,7 @@
       "volumeError": 0,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 13.900000000372529
+      "elapsedMs": 17
     },
     {
       "name": "closed domain water conservation",
@@ -144,7 +152,7 @@
       "volumeError": 3.1492687305857045e-8,
       "conservationError": 2.7912467566142967e-8,
       "errors": [],
-      "elapsedMs": 37
+      "elapsedMs": 39.70000000111759
     },
     {
       "name": "wet dry front, obstacles and controls",
@@ -175,7 +183,7 @@
       "volumeError": 3.6239351720194383e-7,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 32.19999999925494
+      "elapsedMs": 40.59999999962747
     },
     {
       "name": "full grid baked shoreline",
@@ -206,7 +214,7 @@
       "volumeError": 2.510519905974128e-9,
       "conservationError": null,
       "errors": [],
-      "elapsedMs": 379.5
+      "elapsedMs": 398.59999999962747
     },
     {
       "name": "30 simulated seconds from cold start",
@@ -234,8 +242,8 @@
       "core-features-and-limits",
       "subgroup-size-control",
       "float32-filterable",
-      "timestamp-query",
-      "subgroups"
+      "subgroups",
+      "timestamp-query"
     ],
     "timestampQuery": true,
     "limits": {

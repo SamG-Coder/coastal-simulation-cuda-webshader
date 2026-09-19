@@ -57,6 +57,9 @@ code lives only under `tests/reference/`, which is excluded from deployment.
 - Rocky surf uses stronger incoming swells and short-wave chop, with connected
   foam filaments and clear-water gaps. Fractured rock geometry is mirrored in
   the CUDA obstacle field, and wet surfaces darken around the waterline.
+- At exposed rocks, CUDA extrapolates the nearby water surface through the
+  hidden solid interior. Raster depth resolves the precise rock intersection,
+  avoiding raised water triangles and coarse grid-shaped cutouts at cliff faces.
 - Impact-driven spray has 384 slots per rock (5,376 total), split into ballistic
   droplets, dense spray fragments and expanding mist with drag. Launch strength
   follows incoming speed and water rise; still water does not emit plumes.
@@ -167,9 +170,9 @@ exactly. CPU and GPU initialization are tested separately.
 
 ## Performance
 
-The current enhanced model averaged **3.219 ms** per completed update versus **3.140 ms**
+The current enhanced model averaged **3.322 ms** per completed update versus **3.253 ms**
 for reference physics on the same GPU-resident scene in three alternating-order rounds on this
-machine. The 0.079 ms difference is small compared with run-to-run variation;
+machine. The 0.069 ms difference is small compared with run-to-run variation;
 this is evidence of similar pipeline cost, not a guaranteed FPS improvement.
 Both paths perform two physics steps, reconstruction, spray and three texture
 copies with drawing paused. Neither transfers evolving fields to the CPU.
